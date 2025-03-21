@@ -4,6 +4,6 @@
 
 @layer base {
   body {
-      background-image: url("./components/img/background-home.svg");
+      background: #000000;
   }
 }
