@@ -11,7 +11,7 @@ function Home() {
                 <h1 className='text-3xl my-3'>de</h1>
                 <h1 className='text-3xl'>Boisredon</h1>
             </div>
-                <Footer />
+            <Footer />
         </div>
     );
 }
