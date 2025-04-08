@@ -29,7 +29,7 @@ function Header() {
                 {/* Menu Desktop */}
                 <nav className="ml-20 hidden md:flex space-x-20 w-full justify-center text-2xl">
                     {menuItems.map(({ name, path }) => (
-                        <Link key={name} to={path} className={`hover:text-gray-300 transition ${location.pathname === path ? "underline decoration-white" : ""}`}>
+                        <Link key={name} to={path} className={`hover:text-gray-300 transition ${location.pathname === path ? "underline underline-offset-4 decoration-white" : ""}`}>
                             {name}
                         </Link>
                     ))}
