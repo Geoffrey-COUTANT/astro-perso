@@ -2,6 +2,7 @@
   "homepage": ".",
   "name": "untitled",
   "version": "0.1.0",
+  "license": "Proprietary",
   "private": true,
   "dependencies": {
     "@react-three/drei": "^10.0.5",

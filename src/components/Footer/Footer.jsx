@@ -9,7 +9,7 @@ function Footer() {
 
                 {/* Mention copyright */}
                 <p className="text-sm">
-                    © 2025 ClubAstroVégadelaLyre, France. Tous droits réservés.
+                    © 2025 Geoffrey Coutant, France. Tous droits réservés.
                 </p>
             </div>
         </footer>
