@@ -15,7 +15,7 @@ function Meteo() {
         <div className='w-full text-white text-center relative'>
             <div className='bg-[url("./components/img/first-bg-meteo.svg")] bg-cover bg-center bg-fixed min-h-[120vh] flex flex-col'>
                 <Header />
-                <main className="flex-grow flex flex-col items-center px-6 py-12 font-kodchasan font-medium w-full pt-32">
+                <main className="flex-grow flex flex-col items-center px-6 py-12 font-kodchasan font-medium w-full pt-28">
                     <h1 className='text-5xl font-bold mb-12 text-center w-full' data-aos="fade-up">
                         ☁️ Météo & Astronomie 🔭
                     </h1>
