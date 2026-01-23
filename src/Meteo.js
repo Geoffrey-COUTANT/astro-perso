@@ -12,10 +12,10 @@ function Meteo() {
     }, []);
 
     return (
-        <div className='w-full text-white text-center'>
-            <div className='bg-[url("./components/img/first-bg-meteo.svg")] bg-cover bg-center bg-fixed min-h-screen flex flex-col'>
+        <div className='w-full text-white text-center relative'>
+            <div className='bg-[url("./components/img/first-bg-meteo.svg")] bg-cover bg-center bg-fixed min-h-[120vh] flex flex-col'>
                 <Header />
-                <main className="flex-grow flex flex-col items-center px-6 py-12 font-kodchasan font-medium w-full">
+                <main className="flex-grow flex flex-col items-center px-6 py-12 font-kodchasan font-medium w-full pt-32">
                     <h1 className='text-5xl font-bold mb-12 text-center w-full' data-aos="fade-up">
                         ☁️ Météo & Astronomie 🔭
                     </h1>
@@ -43,8 +43,7 @@ function Meteo() {
             </div>
 
             <div className='bg-[url("./components/img/second-bg-meteo.svg")] bg-contain bg-fixed bg-center min-h-screen flex flex-col'>
-
-                <main className="flex-grow flex flex-col items-center px-6 py-12 font-kodchasan font-medium w-full">
+                <main className="flex-grow flex flex-col items-center px-6 py-12 font-kodchasan font-medium w-full pt-24">
                     <h1
                         className='text-4xl sm:text-5xl font-bold mb-6 sm:mb-12 text-center w-full'
                         data-aos="fade-down"
@@ -83,7 +82,7 @@ function Meteo() {
             </div>
 
             <div className='bg-[url("./components/img/third-bg-meteo.svg")] bg-cover bg-center bg-fixed min-h-screen flex flex-col'>
-                <main className="flex-grow flex flex-col justify-center text-start ml-auto px-6 pt-12 font-kodchasan font-medium max-w-5xl sm:max-w-2xl md:max-w-4xl lg:max-w-5xl w-full">
+                <main className="flex-grow flex flex-col justify-center text-start ml-auto px-6 pt-24 font-kodchasan font-medium max-w-5xl sm:max-w-2xl md:max-w-4xl lg:max-w-5xl w-full">
                     <h1 className='text-4xl sm:text-5xl font-bold mb-6 sm:mb-12' data-aos="fade-up">Pour aller plus loin :</h1>
                     <ul className="text-base sm:text-lg space-y-3" data-aos="fade-down" data-aos-delay="200">
                         <li>🔹 <a href="https://fr.wikipedia.org/wiki/Tache_d%27Airy" target="_blank" className="underline hover:text-gray-300"> La Tache d’Airy</a></li>
