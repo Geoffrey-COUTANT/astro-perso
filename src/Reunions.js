@@ -9,6 +9,8 @@ moment.locale('fr');
 
 const Reunions = () => {
     const [events] = useState([
+        { title: 'Assemblée Générale', start: new Date(2026, 0, 23, 20, 30), end: new Date(2026, 0, 23, 22, 30), description: '' },
+        { title: 'Réunion de fin d\'année', start: new Date(2025, 11, 19, 20, 30), end: new Date(2025, 11, 19, 22, 30), description: 'compte rendu de la dernière réunion de l\'année' },
         { title: 'Réunion A', start: new Date(2025, 1, 21, 21, 0), end: new Date(2025, 1, 21, 23, 0), description: 'Résumé de la réunion A' },
         { title: 'Réunion B', start: new Date(2025, 2, 28, 21, 0), end: new Date(2025, 2, 28, 23, 0), description: 'Résumé de la réunion B' },
         { title: 'Réunion C', start: new Date(2025, 3, 25, 21, 30), end: new Date(2025, 3, 25, 23, 30), description: 'Résumé' },
@@ -369,7 +371,6 @@ const Reunions = () => {
                             {selectedEvent.description && (
                                 <div className="mt-6 p-4 bg-white bg-opacity-10 rounded-lg">
                                     <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                                        <Info className="w-5 h-5 text-blue-400" />
                                         Description
                                     </h3>
                                     <div className="max-h-64 overflow-y-auto custom-scrollbar pr-2">
