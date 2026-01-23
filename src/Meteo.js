@@ -5,8 +5,6 @@ import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
 import turbulance1 from "./components/img/turbulance1.svg";
 import turbulance2 from "./components/img/turbulance2.svg";
-import RotatingEarth from "./components/RotatingEarth/RotatingEarth";
-import Planet from "./components/Planet/Planet";
 
 function Meteo() {
     useEffect(() => {

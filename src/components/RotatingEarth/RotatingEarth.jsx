@@ -1,54 +1,79 @@
-import { useEffect, useRef } from "react";
-import * as THREE from "three";
+import React, { useRef, Suspense } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { OrbitControls, Stars, useTexture } from '@react-three/drei';
+import * as THREE from 'three';
 
-const RotatingEarth = () => {
-    const mountRef = useRef(null);
+function EarthPlanet() {
+    const earthRef = useRef();
 
-    useEffect(() => {
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(70, 1, 1, 100);
-        camera.position.z = 25;
+    // Utiliser la texture locale de la Terre
+    const earthTexture = useTexture(
+        require('../img/8k_earth_daymap.jpg')
+    );
 
-        // Renderer avec transparence
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(300, 300);
-        renderer.setClearColor(0x000000, 0); // Fond transparent
-        mountRef.current.appendChild(renderer.domElement);
+    // Textures optionnelles (normal map, specular map, clouds)
+    // Si vous avez ces fichiers, ajoutez-les dans le dossier img et décommentez les lignes ci-dessous
+    // const normalMap = useTexture(require('../img/earth_normal.jpg'));
+    // const specularMap = useTexture(require('../img/earth_specular.jpg'));
+    // const cloudTexture = useTexture(require('../img/earth_clouds.jpg'));
 
-        const geometry = new THREE.SphereGeometry(10, 100, 100);
-        const material = new THREE.MeshPhongMaterial();
+    // Rotation de la Terre
+    useFrame((state, delta) => {
+        if (earthRef.current) {
+            earthRef.current.rotation.y += delta * 0.1;
+        }
+    });
 
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.load(
-            "https://s3-us-west-2.amazonaws.com/s.cdpn.io/1206469/earthmap1k.jpg",
-            (texture) => {
-                material.map = texture;
-                material.transparent = true; // Active la transparence si besoin
-                material.needsUpdate = true;
-            }
-        );
+    return (
+        <>
+            <Stars 
+                radius={300} 
+                depth={60} 
+                count={2000} 
+                factor={7} 
+                saturation={0} 
+                fade 
+            />
+            
+            {/* Lumière ambiante - augmentée pour éclaircir la planète */}
+            <ambientLight intensity={1.0} />
+            
+            {/* Lumière directionnelle (soleil) - intensité augmentée */}
+            <directionalLight position={[5, 3, 5]} intensity={2.5} />
+            <directionalLight position={[-5, -3, -5]} intensity={1.0} color="#ffffff" />
+            <pointLight position={[-5, -3, -5]} intensity={0.8} color="#4a90e2" />
+            
+            {/* Planète Terre - taille ajustée pour l'arrière-plan */}
+            <mesh ref={earthRef}>
+                <sphereGeometry args={[1.5, 64, 64]} />
+                <meshPhongMaterial
+                    map={earthTexture}
+                    shininess={100}
+                    specular={new THREE.Color(0x666666)}
+                    emissive={new THREE.Color(0x000000)}
+                    emissiveIntensity={0.1}
+                />
+            </mesh>
 
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.rotation.x = 0.5;
-        scene.add(mesh);
+            {/* Contrôles de la caméra */}
+            <OrbitControls
+                enableZoom={false}
+                enablePan={false}
+                autoRotate
+                autoRotateSpeed={0.5}
+                minPolarAngle={Math.PI / 3}
+                maxPolarAngle={Math.PI / 1.5}
+            />
+        </>
+    );
+}
 
-        const light = new THREE.AmbientLight(0xffffff);
-        scene.add(light);
-
-        const animate = () => {
-            mesh.rotation.y += 0.005;
-            renderer.render(scene, camera);
-            requestAnimationFrame(animate);
-        };
-
-        animate();
-
-        return () => {
-            mountRef.current.removeChild(renderer.domElement);
-        };
-    }, []);
-
-    return <div ref={mountRef} className="flex justify-center items-center text-gray-300 bg-white w-full h-full">arabe </div>;
-};
+function RotatingEarth() {
+    return (
+        <Suspense fallback={null}>
+            <EarthPlanet />
+        </Suspense>
+    );
+}
 
 export default RotatingEarth;

@@ -18,7 +18,7 @@ function Header() {
     ];
 
     return (
-        <header className="text-white w-full sticky backdrop-blur-sm top-0 left-0 z-50">
+        <header className="text-white w-full sticky backdrop-blur-md bg-black bg-opacity-10 top-0 left-0 z-50">
             <div className="mx-auto px-14 py-4 flex items-center">
 
                 {/* Logo */}

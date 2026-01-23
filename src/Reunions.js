@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Footer from "./components/Footer/Footer";
 import Header from "./components/Header/Header";
 import moment from 'moment';
 import 'moment/locale/fr';
+import { Calendar, MapPin, Clock, Info } from "lucide-react";
 
 moment.locale('fr');
 
@@ -15,7 +16,7 @@ const Reunions = () => {
         { title: 'Réunion E', start: new Date(2025, 5, 20, 21, 30), end: new Date(2025, 5, 20, 21, 30), description: '' },
         { title: 'Soirée festive - Après-midi / soirée', start: new Date(2025, 6, 12, 13, 30), end: new Date(2025, 6, 12, 23, 30), description: '' },
         { title: 'Réunion F', start: new Date(2025, 6, 18, 21, 30), end: new Date(2025, 6, 18, 21, 30), description: '' },
-        { title: 'Nuit des étoiles', start: new Date(2025, 7, 1, 22, 30), end: new Date(2025, 7, 1, 0, 30), description: '' },
+        { title: 'Nuit des étoiles', start: new Date(2025, 7, 1, 22, 30), end: new Date(2025, 7, 1, 0, 30), description: 'Je ne sais pas si ça marche bhfkjfnbdhjkfvnsfkvdbkfhvnvf,lvngjkvjdkjvdg,csvlnlbhvg,jlkvhvgnuclkdnhtgjnvdtuhngcguyrvkcnfhelvgicufjmvenuilrcfgbkvyckniuhezngvbeyniruchfio,zfnuvgieucr,ozehnurgveiuc,ozehnurvgeicufh,nurvgieucfrvgeurihcfzvgehc,znfufregihcfngivieurvegty' },
         { title: 'Réunion ok', start: new Date(2026, 1, 21, 21, 0), end: new Date(2025, 1, 21, 23, 0), description: 'Résumé de la réunion A' },
         { title: 'Réunion ok', start: new Date(2026, 2, 28, 21, 0), end: new Date(2025, 2, 28, 23, 0), description: 'Résumé de la réunion B' },
         { title: 'Réunion ok', start: new Date(2026, 3, 25, 21, 30), end: new Date(2025, 3, 25, 23, 30), description: '' },
@@ -29,6 +30,28 @@ const Reunions = () => {
     const [selectedYear, setSelectedYear] = useState(2025);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [overlayVisible, setOverlayVisible] = useState(false);
+    const [hoveredEvent, setHoveredEvent] = useState(null);
+    const [displayLimit, setDisplayLimit] = useState(6); // Afficher 6 réunions par défaut
+    const isInitialized = useRef(false);
+
+    useEffect(() => {
+        // Définir l'année actuelle par défaut seulement au premier chargement
+        if (!isInitialized.current && events.length > 0) {
+            const currentYear = new Date().getFullYear();
+            const availableYears = [...new Set(events.map(e => e.start.getFullYear()))].sort();
+            if (availableYears.includes(currentYear)) {
+                setSelectedYear(currentYear);
+            } else if (availableYears.length > 0) {
+                setSelectedYear(availableYears[0]);
+            }
+            isInitialized.current = true;
+        }
+    }, [events]);
+
+    // Réinitialiser la limite d'affichage quand on change d'année
+    useEffect(() => {
+        setDisplayLimit(6);
+    }, [selectedYear]);
 
     const handleEventClick = (event) => {
         setSelectedEvent(event);
@@ -41,134 +64,334 @@ const Reunions = () => {
     };
 
     const filteredEvents = events.filter(event => event.start.getFullYear() === selectedYear);
+    const availableYears = [...new Set(events.map(e => e.start.getFullYear()))].sort();
+    
+    // Séparer les événements passés et futurs
+    const now = new Date();
+    const pastEvents = filteredEvents.filter(e => e.start < now).sort((a, b) => b.start - a.start);
+    const upcomingEvents = filteredEvents.filter(e => e.start >= now).sort((a, b) => a.start - b.start);
+    
+    // Limiter l'affichage des événements à venir uniquement
+    const displayedUpcoming = upcomingEvents.slice(0, displayLimit);
+    // Afficher toutes les réunions passées (pas de limite car elles sont compactes)
+    const displayedPast = pastEvents;
+    const hasMore = upcomingEvents.length > displayLimit;
+
+    const getEventType = (title) => {
+        if (title.toLowerCase().includes('nuit des étoiles')) return 'special';
+        if (title.toLowerCase().includes('soirée')) return 'festive';
+        return 'regular';
+    };
 
     return (
         <div className="w-full bg-[url('./components/img/background-reunion.svg')] bg-cover bg-fixed bg-center min-h-screen flex flex-col text-white">
             <Header />
-            <div className=" font-kodchasan flex">
-                {/* Colonne de gauche (calendrier + liste) */}
-                <div className="w-1/2 p-6 md:p-12 flex flex-col">
-                    <div className="flex flex-col items-center justify-center text-center">
-                        <h2 className="text-xl font-semibold text-blue-500 mb-4">Liste des Réunions</h2>
-                        <select
-                            className="mb-4 p-2 bg-white text-black font-semibold rounded shadow"
-                            value={selectedYear}
-                            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                        >
-                            {[2025, 2026, 2027].map((year) => (
-                                <option key={year} value={year}>{year}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="bg-white text-black rounded-xl shadow-lg p-3 w-full max-w-4xl">
-                        <table className="w-full border-collapse border border-gray-300">
-                            <thead>
-                            <tr className="bg-blue-500 text-white">
-                                <th className="border border-gray-300 p-2">Date</th>
-                                <th className="border border-gray-300 p-2">Titre</th>
-                                <th className="border border-gray-300 p-2">Actions</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {filteredEvents.length === 0 ? (
-                                <tr>
-                                    <td colSpan="3" className="text-center p-4">Aucune réunion prévue cette année.</td>
-                                </tr>
-                            ) : (
-                                filteredEvents.map((event, index) => (
-                                    <tr key={index} className="text-center text-sm">
-                                        <td className="border text-left border-gray-300 p-2">
-                                            {moment(event.start).format('dddd DD/MM/YYYY HH:mm').charAt(0).toUpperCase() +
-                                                moment(event.start).format('dddd DD/MM/YYYY HH:mm').slice(1)}
-                                        </td>
-                                        <td className="border border-gray-300">{event.title}</td>
-                                        <td className="border border-gray-300">
-                                            <div className={event.description ? "block" : "invisible"}>
-                                                <button
-                                                    className="p-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                                                    onClick={() => handleEventClick(event)}
-                                                >
-                                                    Voir le résumé
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                            </tbody>
-                        </table>
-                    </div>
+            
+            <main className="flex-grow px-6 py-12 font-kodchasan font-medium">
+                {/* Titre principal */}
+                <div className="text-center mb-12 animate-zoom-rotate">
+                    <h1 className="text-5xl font-bold mb-4">📅 Réunions & Événements</h1>
+                    <p className="text-xl text-gray-300">Découvrez nos prochaines activités astronomiques</p>
                 </div>
 
-                {/* Colonne de droite (texte centré) */}
-                <div className="w-1/2 flex items-center justify-center p-6">
-                    <div className="space-y-8">
-                        <ul>
-                            <li className="text-2xl font-semibold">📍 Lieu des réunions mensuelles</li>
-                            <li><a
-                                    href="https://maps.google.com/?q=45.31448389778514, -0.5384175550138426"
-                                    target="_blank"
-                                    rel="noopener"
-                                    className="underline underline-offset-2 hover:text-gray-300"
-                                >
-                                    Salle polyvalente</a> - 17150 BOISREDON
-                            </li>
-                        </ul>
-                        <ul>
-                            <li className="text-2xl font-semibold">🔹 En cas d’indisponibilité de la salle :</li>
-                            <li>Les réunions se tiendront dans <a
-                                href="https://maps.google.com/?q=45.31487164048232, -0.5382009545538097"
-                                target="_blank"
-                                rel="noopener"
-                                className="underline underline-offset-2 hover:text-gray-300"
-                            >
-                                    la salle des fêtes</a> ou <a
-                                href="https://maps.google.com/?q=45.31533224209379,-0.5377245379285329"
-                                target="_blank"
-                                rel="noopener"
-                                className="underline underline-offset-2 hover:text-gray-300"
-                            >
-                                la salle de la Mairie</a></li>
-                        </ul>
-                        <ul>
-                            <li className="text-2xl font-semibold">🔭 Lieu des observations astronomiques :</li>
-                            <li>📌 <a
-                                href="https://maps.google.com/?q=45.31815775829403, -0.5432543688107226"
-                                target="_blank"
-                                rel="noopener"
-                                className="underline underline-offset-2 hover:text-gray-300"
-                            >
-                                Site de “Bois-Sec”</a></li>
-                            <li>📌 <a
-                                href="https://maps.google.com/?q=45.31747828465985, -0.5331292135372254"
-                                target="_blank"
-                                rel="noopener"
-                                className="underline underline-offset-2 hover:text-gray-300"
-                            >
-                                Chemin du stade</a></li>
-                        </ul>
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid lg:grid-cols-3 gap-8">
+                        {/* Colonne de gauche - Sélecteur d'année et liste */}
+                        <div className="lg:col-span-2 space-y-6">
+                            {/* Sélecteur d'année */}
+                            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 animate-slide-left">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                                        <Calendar className="w-6 h-6" />
+                                        Calendrier {selectedYear}
+                                    </h2>
+                                    <select
+                                        className="p-2 bg-white bg-opacity-20 text-white font-semibold rounded-lg border border-white border-opacity-30 focus:outline-none focus:border-opacity-50"
+                                        value={selectedYear}
+                                        onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                                    >
+                                        {availableYears.map((year) => (
+                                            <option key={year} value={year} className="bg-gray-800">{year}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Liste des événements */}
+                            <div className="space-y-4">
+                                {filteredEvents.length === 0 ? (
+                                    <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 text-center animate-fade-scale">
+                                        <p className="text-xl text-gray-300">Aucune réunion prévue pour {selectedYear}.</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Événements à venir */}
+                                        {upcomingEvents.length > 0 && (
+                                            <div className="mb-6">
+                                                <h3 className="text-2xl font-bold mb-4 text-green-400">📅 À venir</h3>
+                                                <div className="space-y-3">
+                                                    {displayedUpcoming.map((event, index) => {
+                                                        const eventType = getEventType(event.title);
+                                                        return (
+                                                            <div
+                                                                key={`upcoming-${index}`}
+                                                                className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-4 transition-all duration-300 hover:bg-opacity-20 hover:scale-[1.02] cursor-pointer animate-float-in"
+                                                                style={{ animationDelay: `${index * 50}ms` }}
+                                                                onClick={() => event.description && handleEventClick(event)}
+                                                                onMouseEnter={() => setHoveredEvent(`upcoming-${index}`)}
+                                                                onMouseLeave={() => setHoveredEvent(null)}
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                                                        eventType === 'special' ? 'bg-yellow-400' :
+                                                                        eventType === 'festive' ? 'bg-pink-400' :
+                                                                        'bg-blue-400'
+                                                                    } ${hoveredEvent === `upcoming-${index}` ? 'animate-pulse' : ''}`} />
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <h3 className="text-lg font-bold truncate">{event.title}</h3>
+                                                                        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-300 mt-1">
+                                                                            <span className="flex items-center gap-1">
+                                                                                <Calendar className="w-3 h-3" />
+                                                                                {moment(event.start).format('DD MMM YYYY')}
+                                                                            </span>
+                                                                            <span className="flex items-center gap-1">
+                                                                                <Clock className="w-3 h-3" />
+                                                                                {moment(event.start).format('HH:mm')}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                    {event.description && (
+                                                                        <Info className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Événements passés (affichage réduit) */}
+                                        {pastEvents.length > 0 && (
+                                            <div className="mb-6">
+                                                <h3 className="text-2xl font-bold mb-4 text-gray-400">📜 Passées</h3>
+                                                <div className="space-y-2">
+                                                    {displayedPast.map((event, index) => {
+                                                        const eventType = getEventType(event.title);
+                                                        const hasDescription = event.description && typeof event.description === 'string' && event.description.trim().length > 0;
+                                                        return (
+                                                            <div
+                                                                key={`past-${index}`}
+                                                                className={`bg-white bg-opacity-5 backdrop-blur-sm rounded-lg p-3 transition-all duration-300 ${
+                                                                    hasDescription ? 'hover:bg-opacity-15 cursor-pointer hover:scale-[1.02]' : 'opacity-70 cursor-default'
+                                                                }`}
+                                                                onClick={(e) => {
+                                                                    if (hasDescription) {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        handleEventClick(event);
+                                                                    }
+                                                                }}
+                                                                onMouseEnter={() => hasDescription && setHoveredEvent(`past-${index}`)}
+                                                                onMouseLeave={() => setHoveredEvent(null)}
+                                                            >
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                                                        eventType === 'special' ? 'bg-yellow-400' :
+                                                                        eventType === 'festive' ? 'bg-pink-400' :
+                                                                        'bg-blue-400'
+                                                                    }`} />
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <h4 className="text-sm font-semibold truncate">{event.title}</h4>
+                                                                        <p className="text-xs text-gray-400">{moment(event.start).format('DD MMM YYYY')}</p>
+                                                                    </div>
+                                                                    {hasDescription && (
+                                                                        <Info className="w-4 h-4 text-blue-400 flex-shrink-0 hover:text-blue-300 transition" />
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Bouton "Voir plus" */}
+                                        {hasMore && (
+                                            <div className="text-center">
+                                                <button
+                                                    onClick={() => setDisplayLimit(displayLimit + 6)}
+                                                    className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold py-3 px-8 rounded-lg transition duration-300 hover:scale-105"
+                                                >
+                                                    Voir plus de réunions ({filteredEvents.length - displayLimit} restantes)
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* Bouton "Voir moins" si on a affiché plus que le minimum */}
+                                        {displayLimit > 6 && (
+                                            <div className="text-center">
+                                                <button
+                                                    onClick={() => setDisplayLimit(6)}
+                                                    className="text-gray-400 hover:text-white text-sm underline transition"
+                                                >
+                                                    Réduire l'affichage
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Colonne de droite - Informations pratiques */}
+                        <div className="space-y-6">
+                            {/* Lieux des réunions */}
+                            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 animate-slide-right">
+                                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                                    <MapPin className="w-6 h-6" />
+                                    Lieux
+                                </h2>
+                                <div className="space-y-4">
+                                    <div>
+                                        <h3 className="font-semibold text-lg mb-2">📍 Réunions mensuelles</h3>
+                                        <a
+                                            href="https://maps.google.com/?q=45.31448389778514, -0.5384175550138426"
+                                            target="_blank"
+                                            rel="noopener"
+                                            className="text-blue-400 hover:text-blue-300 underline block"
+                                        >
+                                            Salle polyvalente
+                                        </a>
+                                        <p className="text-gray-300 text-sm">17150 BOISREDON</p>
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 className="font-semibold text-lg mb-2">🔹 Salles alternatives</h3>
+                                        <p className="text-sm text-gray-300 mb-2">En cas d'indisponibilité :</p>
+                                        <ul className="space-y-1 text-sm">
+                                            <li>
+                                                <a
+                                                    href="https://maps.google.com/?q=45.31487164048232, -0.5382009545538097"
+                                                    target="_blank"
+                                                    rel="noopener"
+                                                    className="text-blue-400 hover:text-blue-300 underline"
+                                                >
+                                                    Salle des fêtes
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a
+                                                    href="https://maps.google.com/?q=45.31533224209379,-0.5377245379285329"
+                                                    target="_blank"
+                                                    rel="noopener"
+                                                    className="text-blue-400 hover:text-blue-300 underline"
+                                                >
+                                                    Salle de la Mairie
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 className="font-semibold text-lg mb-2">🔭 Observations</h3>
+                                        <ul className="space-y-1 text-sm">
+                                            <li>
+                                                <a
+                                                    href="https://maps.google.com/?q=45.31815775829403, -0.5432543688107226"
+                                                    target="_blank"
+                                                    rel="noopener"
+                                                    className="text-blue-400 hover:text-blue-300 underline"
+                                                >
+                                                    Site de "Bois-Sec"
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a
+                                                    href="https://maps.google.com/?q=45.31747828465985, -0.5331292135372254"
+                                                    target="_blank"
+                                                    rel="noopener"
+                                                    className="text-blue-400 hover:text-blue-300 underline"
+                                                >
+                                                    Chemin du stade
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Message d'invitation */}
+                            <div className="bg-gradient-to-br from-blue-500 to-purple-600 bg-opacity-20 backdrop-blur-sm rounded-xl p-6 animate-bounce-in">
+                                <h2 className="text-2xl font-bold mb-3">✨ Rejoignez-nous !</h2>
+                                <p className="text-gray-200">
+                                    Venez nombreux explorer les merveilles du ciel avec nous lors de nos prochaines réunions et observations !
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            {overlayVisible && (
-                <div className="fixed inset-0 font-kodchasan bg-gray-800 bg-opacity-70 z-50 flex justify-center items-center">
-                    <div className="bg-white p-8 rounded-lg text-blue-500 w-96">
-                        <h2 className="text-2xl font-bold">{selectedEvent?.title}</h2>
-                        <p className="mt-4">Date: {moment(selectedEvent?.start).format('dddd DD/MM/YYYY HH:mm')}</p>
-                        <p className="mt-4">{selectedEvent?.description}</p>
+            </main>
+
+            {/* Modal pour les détails */}
+            {overlayVisible && selectedEvent && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-80 z-50 flex justify-center items-center p-4 animate-fade-scale"
+                    onClick={closeOverlay}
+                >
+                    <div 
+                        className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar text-white animate-zoom-rotate"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex justify-between items-start mb-6">
+                            <h2 className="text-3xl font-bold">{selectedEvent.title}</h2>
+                            <button
+                                onClick={closeOverlay}
+                                className="text-3xl hover:text-gray-300 transition"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                                <Calendar className="w-5 h-5" />
+                                <span className="text-lg">
+                                    {moment(selectedEvent.start).format('dddd DD MMMM YYYY')}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Clock className="w-5 h-5" />
+                                <span className="text-lg">
+                                    {moment(selectedEvent.start).format('HH:mm')} - {moment(selectedEvent.end).format('HH:mm')}
+                                </span>
+                            </div>
+                            {selectedEvent.description && (
+                                <div className="mt-6 p-4 bg-white bg-opacity-10 rounded-lg">
+                                    <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                                        <Info className="w-5 h-5 text-blue-400" />
+                                        Description
+                                    </h3>
+                                    <div className="max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                                        <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
+                                            {selectedEvent.description}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        
                         <button
                             onClick={closeOverlay}
-                            className="mt-4 p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            className="mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300"
                         >
                             Fermer
                         </button>
                     </div>
                 </div>
             )}
-            <div className='flex flex-col justify-center space-y-6 mt-4'>
-                <h1 className='flex justify-center text-center items-center text-3xl'>✨ Venez nombreux explorer les merveilles du ciel avec nous ! ✨</h1>
-                <Footer />
-            </div>
+
+            <Footer />
         </div>
     );
 };
