@@ -10,30 +10,30 @@ moment.locale('fr');
 const Reunions = () => {
     const [events] = useState([
         { title: 'Assemblée Générale', start: new Date(2026, 0, 23, 20, 30), end: new Date(2026, 0, 23, 22, 30), description: '' },
-        { title: 'Réunion de fin d\'année', start: new Date(2025, 11, 19, 20, 30), end: new Date(2025, 11, 19, 22, 30), description: 'compte rendu de la dernière réunion de l\'année' },
+        { title: 'Réunion de fin d\'année', start: new Date(2025, 11, 19, 20, 30), end: new Date(2025, 11, 19), description: 'compte rendu de la dernière réunion de l\'année' },
         { title: 'Réunion A', start: new Date(2025, 1, 21, 21, 0), end: new Date(2025, 1, 21, 23, 0), description: 'Résumé de la réunion A' },
         { title: 'Réunion B', start: new Date(2025, 2, 28, 21, 0), end: new Date(2025, 2, 28, 23, 0), description: 'Résumé de la réunion B' },
-        { title: 'Réunion C', start: new Date(2025, 3, 25, 21, 30), end: new Date(2025, 3, 25, 23, 30), description: 'Résumé' },
-        { title: 'Réunion D', start: new Date(2025, 4, 23, 21, 30), end: new Date(2025, 4, 23, 23, 30), description: '' },
-        { title: 'Réunion E', start: new Date(2025, 5, 20, 21, 30), end: new Date(2025, 5, 20, 21, 30), description: '' },
-        { title: 'Soirée festive - Après-midi / soirée', start: new Date(2025, 6, 12, 13, 30), end: new Date(2025, 6, 12, 23, 30), description: '' },
-        { title: 'Réunion F', start: new Date(2025, 6, 18, 21, 30), end: new Date(2025, 6, 18, 21, 30), description: '' },
-        { title: 'Nuit des étoiles', start: new Date(2025, 7, 1, 22, 30), end: new Date(2025, 7, 1, 0, 30), description: 'Je ne sais pas si ça marche bhfkjfnbdhjkfvnsfkvdbkfhvnvf,lvngjkvjdkjvdg,csvlnlbhvg,jlkvhvgnuclkdnhtgjnvdtuhngcguyrvkcnfhelvgicufjmvenuilrcfgbkvyckniuhezngvbeyniruchfio,zfnuvgieucr,ozehnurgveiuc,ozehnurvgeicufh,nurvgieucfrvgeurihcfzvgehc,znfufregihcfngivieurvegty' },
-        { title: 'Réunion ok', start: new Date(2026, 1, 21, 21, 0), end: new Date(2025, 1, 21, 23, 0), description: 'Résumé de la réunion A' },
-        { title: 'Réunion ok', start: new Date(2026, 2, 28, 21, 0), end: new Date(2025, 2, 28, 23, 0), description: 'Résumé de la réunion B' },
-        { title: 'Réunion ok', start: new Date(2026, 3, 25, 21, 30), end: new Date(2025, 3, 25, 23, 30), description: '' },
-        { title: 'Réunion ok', start: new Date(2026, 4, 23, 21, 30), end: new Date(2025, 4, 23, 23, 30), description: '' },
-        { title: 'Réunion ok', start: new Date(2026, 5, 20, 21, 30), end: new Date(2025, 5, 20, 21, 30), description: '' },
-        { title: 'Soirée festive - Après-midi / soirée', start: new Date(2026, 6, 12, 13, 30), end: new Date(2025, 6, 12, 23, 30), description: '' },
-        { title: 'Réunion J', start: new Date(2026, 6, 18, 21, 30), end: new Date(2025, 6, 18, 21, 30), description: '' },
-        { title: 'Nuit des étoiles', start: new Date(2026, 7, 1, 22, 30), end: new Date(2025, 7, 1, 0, 30), description: '' }
+        { title: 'Réunion C', start: new Date(2025, 3, 25, 21, 30), end: new Date(2025, 3, 25, 23, 30), description: 'Résumé de la réunion C' },
+        { title: 'Réunion D', start: new Date(2025, 4, 23, 21, 30), end: new Date(2025, 4, 23, 23, 30), description: 'Résumé de la réunion D' },
+        { title: 'Réunion E', start: new Date(2025, 5, 20, 21, 30), end: new Date(2025, 5, 20, 21, 30), description: 'Résumé de la réunion E' },
+        { title: 'Soirée festive - Après-midi / soirée', start: new Date(2025, 6, 12, 13, 30), end: new Date(2025, 6, 12, 23, 30), description: 'Résumé de la soirée festive' },
+        { title: 'Réunion F', start: new Date(2025, 6, 18, 21, 30), end: new Date(2025, 6, 18, 21, 30), description: 'Résumé de la réunion F' },
+        { title: 'Nuit des étoiles', start: new Date(2025, 7, 1, 22, 30), end: new Date(2025, 7, 1, 0, 30), description: 'Résumé de la nuit étoilée' },
+        { title: 'Réunion ok', start: new Date(2026, 1, 21, 21, 0), end: new Date(2025, 1, 21), description: '' },
+        { title: 'Réunion ok', start: new Date(2026, 2, 28, 21, 0), end: new Date(2025, 2, 28), description: '' },
+        { title: 'Réunion ok', start: new Date(2026, 3, 25, 21, 30), end: new Date(2025, 3, 25), description: '' },
+        { title: 'Réunion ok', start: new Date(2026, 4, 23, 21, 30), end: new Date(2025, 4, 23), description: '' },
+        { title: 'Réunion ok', start: new Date(2026, 5, 20, 21, 30), end: new Date(2025, 5, 20), description: '' },
+        { title: 'Soirée festive - Après-midi / soirée', start: new Date(2026, 6, 12, 13, 30), end: new Date(2025, 6, 12), description: '' },
+        { title: 'Réunion J', start: new Date(2026, 6, 18, 21, 30), end: new Date(2025, 6, 18), description: '' },
+        { title: 'Nuit des étoiles', start: new Date(2026, 7, 1, 22, 30), end: new Date(2025, 7, 1), description: '' }
     ])
 
     const [selectedYear, setSelectedYear] = useState(2025);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [overlayVisible, setOverlayVisible] = useState(false);
     const [hoveredEvent, setHoveredEvent] = useState(null);
-    const [displayLimit, setDisplayLimit] = useState(6); // Afficher 6 réunions par défaut
+    const [displayLimit, setDisplayLimit] = useState(2); // Afficher 2 réunions à venir par défaut
     const isInitialized = useRef(false);
 
     useEffect(() => {
@@ -52,7 +52,8 @@ const Reunions = () => {
 
     // Réinitialiser la limite d'affichage quand on change d'année
     useEffect(() => {
-        setDisplayLimit(6);
+        // Toujours revenir à 2 réunions à venir quand on change d'année
+        setDisplayLimit(2);
     }, [selectedYear]);
 
     const handleEventClick = (event) => {
@@ -172,6 +173,29 @@ const Reunions = () => {
                                                 </div>
                                             </div>
                                         )}
+                                        {/* Bouton "Voir plus" */}
+                                        {hasMore && (
+                                            <div className="text-center">
+                                                <button
+                                                    onClick={() => setDisplayLimit(upcomingEvents.length)}
+                                                    className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold py-3 px-8 rounded-lg transition duration-300 hover:scale-105"
+                                                >
+                                                    Voir plus de réunions ({upcomingEvents.length - displayLimit} restantes)
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* Bouton "Voir moins" si on a affiché plus que le minimum (2) */}
+                                        {displayLimit > 2 && (
+                                            <div className="text-center mt-2">
+                                                <button
+                                                    onClick={() => setDisplayLimit(2)}
+                                                    className="text-gray-400 hover:text-white text-sm underline transition"
+                                                >
+                                                    Réduire l'affichage
+                                                </button>
+                                            </div>
+                                        )}
 
                                         {/* Événements passés (affichage réduit) */}
                                         {pastEvents.length > 0 && (
@@ -215,30 +239,6 @@ const Reunions = () => {
                                                         );
                                                     })}
                                                 </div>
-                                            </div>
-                                        )}
-
-                                        {/* Bouton "Voir plus" */}
-                                        {hasMore && (
-                                            <div className="text-center">
-                                                <button
-                                                    onClick={() => setDisplayLimit(displayLimit + 6)}
-                                                    className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold py-3 px-8 rounded-lg transition duration-300 hover:scale-105"
-                                                >
-                                                    Voir plus de réunions ({filteredEvents.length - displayLimit} restantes)
-                                                </button>
-                                            </div>
-                                        )}
-
-                                        {/* Bouton "Voir moins" si on a affiché plus que le minimum */}
-                                        {displayLimit > 6 && (
-                                            <div className="text-center">
-                                                <button
-                                                    onClick={() => setDisplayLimit(6)}
-                                                    className="text-gray-400 hover:text-white text-sm underline transition"
-                                                >
-                                                    Réduire l'affichage
-                                                </button>
                                             </div>
                                         )}
                                     </>

@@ -43,9 +43,9 @@ function EarthPlanet() {
             <directionalLight position={[-5, -3, -5]} intensity={1.0} color="#ffffff" />
             <pointLight position={[-5, -3, -5]} intensity={0.8} color="#4a90e2" />
             
-            {/* Planète Terre - taille ajustée pour l'arrière-plan */}
+            {/* Planète Terre - légèrement agrandie */}
             <mesh ref={earthRef}>
-                <sphereGeometry args={[1.5, 64, 64]} />
+                <sphereGeometry args={[2, 64, 64]} />
                 <meshPhongMaterial
                     map={earthTexture}
                     shininess={100}

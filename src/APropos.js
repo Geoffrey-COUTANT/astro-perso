@@ -80,7 +80,7 @@ function APropos() {
                                 <div>
                                     <h3 className="font-bold text-2xl mb-2">🎉 Événements Spéciaux</h3>
                                     <p className="mb-4">
-                                        Nous participons à des événements nationaux comme la Nuit des Étoiles et organisons des soirées festives.
+                                        Nous participons à des événements nationaux comme la Nuit des Étoiles et organisons des soirées d'observations.
                                     </p>
                                 </div>
                             </div>

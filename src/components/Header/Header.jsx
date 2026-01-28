@@ -18,8 +18,9 @@ function Header() {
     ];
 
     return (
-        <header className="text-white w-full sticky backdrop-blur-md bg-black bg-opacity-10 top-0 left-0 z-[100]">
-            <div className="mx-auto px-14 py-4 flex items-center">
+        <header className="text-white w-full sticky backdrop-blur-md bg-transparent top-0 left-0 z-[100]">
+            {/* Barre principale : logo à gauche, menu centre (desktop) et burger à droite (mobile) */}
+            <div className="mx-auto px-4 sm:px-8 lg:px-14 py-4 flex items-center justify-between w-full">
 
                 {/* Logo */}
                 <div className="flex">
