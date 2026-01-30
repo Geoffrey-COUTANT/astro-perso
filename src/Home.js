@@ -15,7 +15,8 @@ function Home() {
                 </div>
             </div>
             
-            <div className="flex-grow flex flex-col justify-center items-center mt-20 font-kodchasan font-medium relative z-10">
+            {/* pointer-events-none : les clics passent à travers vers la planète pour pouvoir la faire tourner */}
+            <div className="flex-grow flex flex-col justify-center items-center mt-20 font-kodchasan font-medium relative z-10 pointer-events-none">
                 <h1 className='text-6xl mb-4 animate-fade-scale'>Club Astro Véga de la Lyre</h1>
                 <h1 className='text-3xl my-3 animate-fade-scale' style={{ animationDelay: '0.2s' }}>de</h1>
                 <h1 className='text-3xl mb-8 animate-fade-scale' style={{ animationDelay: '0.4s' }}>Boisredon</h1>

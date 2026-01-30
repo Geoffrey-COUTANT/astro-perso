@@ -1,50 +1,91 @@
-import React, { useRef, Suspense } from 'react';
-import { useFrame } from '@react-three/fiber';
+import React, { useRef, useState, useEffect, Suspense } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Stars, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
+const ROTATION_SPEED = 0.005;
+const MAX_POLAR = Math.PI / 2 - 0.2;
+
 function EarthPlanet() {
     const earthRef = useRef();
+    const [isDragging, setIsDragging] = useState(false);
+    const [isOver, setIsOver] = useState(false);
+    const lastPointer = useRef({ x: 0, y: 0 });
+    const { gl } = useThree();
 
-    // Utiliser la texture locale de la Terre
     const earthTexture = useTexture(
         require('../img/8k_earth_daymap.jpg')
     );
 
-    // Textures optionnelles (normal map, specular map, clouds)
-    // Si vous avez ces fichiers, ajoutez-les dans le dossier img et décommentez les lignes ci-dessous
-    // const normalMap = useTexture(require('../img/earth_normal.jpg'));
-    // const specularMap = useTexture(require('../img/earth_specular.jpg'));
-    // const cloudTexture = useTexture(require('../img/earth_clouds.jpg'));
-
-    // Rotation de la Terre
     useFrame((state, delta) => {
-        if (earthRef.current) {
+        if (earthRef.current && !isDragging) {
             earthRef.current.rotation.y += delta * 0.1;
         }
     });
 
+    const handlePointerDown = (e) => {
+        e.stopPropagation();
+        setIsDragging(true);
+        lastPointer.current = { x: e.clientX, y: e.clientY };
+    };
+
+    useEffect(() => {
+        if (!isDragging) return;
+
+        const handleMove = (e) => {
+            if (!earthRef.current) return;
+            const dx = e.clientX - lastPointer.current.x;
+            const dy = e.clientY - lastPointer.current.y;
+            earthRef.current.rotation.y += dx * ROTATION_SPEED;
+            earthRef.current.rotation.x = THREE.MathUtils.clamp(
+                earthRef.current.rotation.x + dy * ROTATION_SPEED,
+                -MAX_POLAR,
+                MAX_POLAR
+            );
+            lastPointer.current = { x: e.clientX, y: e.clientY };
+        };
+
+        const handleUp = () => setIsDragging(false);
+
+        document.addEventListener('pointermove', handleMove);
+        document.addEventListener('pointerup', handleUp);
+        document.addEventListener('pointerleave', handleUp);
+        return () => {
+            document.removeEventListener('pointermove', handleMove);
+            document.removeEventListener('pointerup', handleUp);
+            document.removeEventListener('pointerleave', handleUp);
+        };
+    }, [isDragging]);
+
+    useEffect(() => {
+        const el = gl.domElement;
+        if (isDragging) el.style.cursor = 'grabbing';
+        else if (isOver) el.style.cursor = 'grab';
+        else el.style.cursor = 'default';
+    }, [isDragging, isOver, gl.domElement]);
+
     return (
         <>
-            <Stars 
-                radius={300} 
-                depth={60} 
-                count={2000} 
-                factor={7} 
-                saturation={0} 
-                fade 
+            <Stars
+                radius={300}
+                depth={60}
+                count={2000}
+                factor={7}
+                saturation={0}
+                fade
             />
-            
-            {/* Lumière ambiante - augmentée pour éclaircir la planète */}
+
             <ambientLight intensity={1.0} />
-            
-            {/* Lumière directionnelle (soleil) - intensité augmentée */}
             <directionalLight position={[5, 3, 5]} intensity={2.5} />
             <directionalLight position={[-5, -3, -5]} intensity={1.0} color="#ffffff" />
             <pointLight position={[-5, -3, -5]} intensity={0.8} color="#4a90e2" />
-            
-            {/* Planète Terre - légèrement agrandie */}
-            <mesh ref={earthRef}>
+
+            <mesh
+                ref={earthRef}
+                onPointerDown={handlePointerDown}
+                onPointerOver={() => setIsOver(true)}
+                onPointerOut={() => setIsOver(false)}
+            >
                 <sphereGeometry args={[2, 64, 64]} />
                 <meshPhongMaterial
                     map={earthTexture}
@@ -55,12 +96,11 @@ function EarthPlanet() {
                 />
             </mesh>
 
-            {/* Contrôles de la caméra */}
             <OrbitControls
                 enableZoom={false}
                 enablePan={false}
-                autoRotate
-                autoRotateSpeed={0.5}
+                enableRotate={false}
+                autoRotate={false}
                 minPolarAngle={Math.PI / 3}
                 maxPolarAngle={Math.PI / 1.5}
             />

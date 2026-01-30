@@ -44,9 +44,9 @@ function Header() {
 
             {/* Menu Mobile */}
             {isOpen && (
-                <div className="md:hidden py-4 space-y-3">
+                <div className="md:hidden py-4 space-y-3 text-center">
                     {menuItems.map(({ name, path }) => (
-                        <Link key={name} to={path} className="block hover:text-gray-300 transition">
+                        <Link key={name} to={path} className="block hover:text-gray-300 transition text-lg">
                             {name}
                         </Link>
                     ))}
