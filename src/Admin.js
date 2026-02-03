@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Header from "./components/Header/Header";
 import { Link, useNavigate } from "react-router-dom";
-import { Upload, Trash2, ArrowLeft, ImagePlus, Sparkles, FolderOpen, Calendar, Link2, Mail, Images, RotateCcw, Save, X, Pencil, Plus, GripVertical, LogOut } from "lucide-react";
+import { Upload, Trash2, ArrowLeft, ImagePlus, Sparkles, Calendar, Link2, Mail, Images, RotateCcw, Save, X, Pencil, Plus, GripVertical, LogOut } from "lucide-react";
 import { getStaticGalleryList } from "./data/galleryStaticImages";
 import { staticMeetings } from "./data/staticMeetings";
 import { ADMIN_TOKEN_KEY } from "./AdminLogin";
@@ -53,7 +53,7 @@ function Admin() {
     const [linkCategoryTitles, setLinkCategoryTitles] = useState({});
     const [draggedLink, setDraggedLink] = useState(null);
 
-    const [contactInfo, setContactInfo] = useState(null);
+    const [, setContactInfo] = useState(null);
     const [contactLoading, setContactLoading] = useState(false);
     const [contactForm, setContactForm] = useState({ email: "", phone: "", addressLine1: "", addressLine2: "" });
     const [contactSaving, setContactSaving] = useState(false);
@@ -227,6 +227,7 @@ function Admin() {
             const items = buildUnifiedImages();
             setUnifiedImages(items);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [images, hiddenStaticIds, unifiedOrder, loading]);
 
     useEffect(() => {
@@ -471,7 +472,7 @@ function Admin() {
         let cat = getCategoryById(categoryId);
         if (!cat || !API_BASE) return;
         if (editingLink?.categoryId === categoryId && linkForm.name.trim()) {
-            const links = [...(cat.links || [])];
+            let links = [...(cat.links || [])];
             if (editingLink.linkId) {
                 const idx = links.findIndex((l) => l.id === editingLink.linkId);
                 if (idx >= 0) links[idx] = { ...links[idx], name: linkForm.name.trim(), url: linkForm.url.trim(), description: linkForm.description.trim() };

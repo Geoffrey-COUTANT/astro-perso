@@ -258,7 +258,7 @@ const Reunions = () => {
                                         <a
                                             href="https://maps.google.com/?q=45.31448389778514, -0.5384175550138426"
                                             target="_blank"
-                                            rel="noopener"
+                                            rel="noreferrer"
                                             className="text-blue-400 hover:text-blue-300 underline block"
                                         >
                                             Salle polyvalente
@@ -274,7 +274,7 @@ const Reunions = () => {
                                                 <a
                                                     href="https://maps.google.com/?q=45.31487164048232, -0.5382009545538097"
                                                     target="_blank"
-                                                    rel="noopener"
+                                                    rel="noreferrer"
                                                     className="text-blue-400 hover:text-blue-300 underline"
                                                 >
                                                     Salle des fêtes
@@ -284,7 +284,7 @@ const Reunions = () => {
                                                 <a
                                                     href="https://maps.google.com/?q=45.31533224209379,-0.5377245379285329"
                                                     target="_blank"
-                                                    rel="noopener"
+                                                    rel="noreferrer"
                                                     className="text-blue-400 hover:text-blue-300 underline"
                                                 >
                                                     Salle de la Mairie
@@ -300,7 +300,7 @@ const Reunions = () => {
                                                 <a
                                                     href="https://maps.google.com/?q=45.31815775829403, -0.5432543688107226"
                                                     target="_blank"
-                                                    rel="noopener"
+                                                    rel="noreferrer"
                                                     className="text-blue-400 hover:text-blue-300 underline"
                                                 >
                                                     Site de "Bois-Sec"
@@ -310,7 +310,7 @@ const Reunions = () => {
                                                 <a
                                                     href="https://maps.google.com/?q=45.31747828465985, -0.5331292135372254"
                                                     target="_blank"
-                                                    rel="noopener"
+                                                    rel="noreferrer"
                                                     className="text-blue-400 hover:text-blue-300 underline"
                                                 >
                                                     Chemin du stade

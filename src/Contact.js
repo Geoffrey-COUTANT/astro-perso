@@ -15,8 +15,7 @@ const DEFAULT_CONTACT = {
 
 function Contact() {
     const [showDonationModal, setShowDonationModal] = useState(false);
-    const [donationData, setDonationData] = useState(null);
-    const [donationAmount, setDonationAmount] = useState("");
+    const [donationData] = useState(null);
     const [contact, setContact] = useState(DEFAULT_CONTACT);
 
     useEffect(() => {
