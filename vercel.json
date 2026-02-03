@@ -1,8 +1,12 @@
 {
   "rewrites": [
-    {
-      "source": "^/((?!.*\\\\\.).*)$",
-      "destination": "/index.html"
-    }
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/meteo", "destination": "/index.html" },
+    { "source": "/reunions", "destination": "/index.html" },
+    { "source": "/contact", "destination": "/index.html" },
+    { "source": "/a-propos", "destination": "/index.html" },
+    { "source": "/liens-utiles", "destination": "/index.html" },
+    { "source": "/galerie", "destination": "/index.html" },
+    { "source": "/admin/:path*", "destination": "/index.html" }
   ]
 }
