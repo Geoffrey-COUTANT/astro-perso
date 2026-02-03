@@ -569,7 +569,7 @@ function Admin() {
          unifiedImages.map((i) => i.id).join(",") !== unifiedOrder.join(","));
 
     return (
-        <div className="min-h-screen text-white relative overflow-hidden flex flex-col font-kodchasan">
+        <div className="min-h-screen w-full min-w-full max-w-none text-white relative overflow-hidden flex flex-col font-kodchasan" style={{ width: '100%', maxWidth: 'none' }}>
             <div
                 className="fixed inset-0 -z-10"
                 style={{
@@ -584,7 +584,7 @@ function Admin() {
                 }}
             />
 
-            <div className="flex flex-1 min-h-0">
+            <div className="flex flex-1 min-h-0 w-full min-w-0">
             <aside className="fixed left-0 top-0 bottom-0 w-56 sm:w-64 z-20 border-r border-white/10 bg-black/40 backdrop-blur-md flex flex-col pt-6 pb-6 px-3">
                 <Link
                     to="/"
@@ -620,7 +620,7 @@ function Admin() {
                 </button>
             </aside>
 
-            <main ref={mainContentRef} className="flex-1 overflow-auto max-w-4xl ml-56 sm:ml-64 px-4 sm:px-6 py-10 sm:py-14 w-full min-h-screen">
+            <main ref={mainContentRef} className="flex-1 min-w-0 overflow-auto ml-56 sm:ml-64 px-4 sm:px-6 py-10 sm:py-14 min-h-screen" style={{ minWidth: 0, width: '100%' }}>
                 {activeSection === "galerie" && (
                     <>
                 <div className="mb-10">
