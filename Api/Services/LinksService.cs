@@ -1,31 +1,121 @@
-using System.Text.Json;
+using Api.Data;
 using Api.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Services;
 
 public class LinksService
 {
-    private readonly string _dataPath;
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
 
-    public LinksService(IWebHostEnvironment env)
+    public LinksService(IDbContextFactory<AppDbContext> dbFactory)
     {
-        var linksPath = Path.Combine(env.ContentRootPath, "uploads", "links");
-        Directory.CreateDirectory(linksPath);
-        _dataPath = Path.Combine(linksPath, "data.json");
-        EnsureSeed();
+        _dbFactory = dbFactory;
     }
 
-    private void EnsureSeed()
+    public List<UsefulLinkCategory> GetAll()
     {
-        if (File.Exists(_dataPath)) return;
-        var data = GetSeedData();
-        SaveData(data);
+        using var db = _dbFactory.CreateDbContext();
+        EnsureSeed(db);
+        return db.LinkCategories
+            .Include(c => c.Links)
+            .OrderBy(c => c.Order)
+            .Select(c => new UsefulLinkCategory
+            {
+                Id = c.Id,
+                Title = c.Title,
+                Order = c.Order,
+                Links = c.Links.OrderBy(l => l.Order).Select(l => new UsefulLinkItem
+                {
+                    Id = l.Id,
+                    Name = l.Name,
+                    Url = l.Url,
+                    Description = l.Description,
+                    Order = l.Order
+                }).ToList()
+            })
+            .ToList();
     }
 
-    private static LinksData GetSeedData()
+    public UsefulLinkCategory? GetCategory(Guid id)
     {
-        var data = new LinksData();
+        using var db = _dbFactory.CreateDbContext();
+        var c = db.LinkCategories.Include(x => x.Links).FirstOrDefault(x => x.Id == id);
+        return c == null ? null : ToModel(c);
+    }
+
+    public UsefulLinkCategory UpdateCategory(Guid id, string title, List<UsefulLinkItem> links)
+    {
+        using var db = _dbFactory.CreateDbContext();
+        var cat = db.LinkCategories.Include(x => x.Links).FirstOrDefault(c => c.Id == id);
+        if (cat == null) return null!;
+        cat.Title = title ?? cat.Title;
+        db.LinkItems.RemoveRange(cat.Links);
+        for (var i = 0; i < links.Count; i++)
+        {
+            var l = links[i];
+            if (l.Id == Guid.Empty) l.Id = Guid.NewGuid();
+            cat.Links.Add(new LinkItemEntity
+            {
+                Id = l.Id,
+                CategoryId = cat.Id,
+                Name = l.Name,
+                Url = l.Url,
+                Description = l.Description ?? "",
+                Order = i
+            });
+        }
+        db.SaveChanges();
+        return ToModel(db.LinkCategories.Include(x => x.Links).First(x => x.Id == id));
+    }
+
+    public UsefulLinkCategory AddCategory(string title)
+    {
+        using var db = _dbFactory.CreateDbContext();
+        var order = db.LinkCategories.Any() ? db.LinkCategories.Max(c => c.Order) + 1 : 0;
+        var cat = new LinkCategoryEntity
+        {
+            Id = Guid.NewGuid(),
+            Title = title,
+            Order = order,
+            Links = new List<LinkItemEntity>()
+        };
+        db.LinkCategories.Add(cat);
+        db.SaveChanges();
+        return ToModel(cat);
+    }
+
+    public bool DeleteCategory(Guid id)
+    {
+        using var db = _dbFactory.CreateDbContext();
+        var cat = db.LinkCategories.Find(id);
+        if (cat == null) return false;
+        db.LinkCategories.Remove(cat);
+        db.SaveChanges();
+        return true;
+    }
+
+    private static UsefulLinkCategory ToModel(LinkCategoryEntity c)
+    {
+        return new UsefulLinkCategory
+        {
+            Id = c.Id,
+            Title = c.Title,
+            Order = c.Order,
+            Links = c.Links.OrderBy(l => l.Order).Select(l => new UsefulLinkItem
+            {
+                Id = l.Id,
+                Name = l.Name,
+                Url = l.Url,
+                Description = l.Description,
+                Order = l.Order
+            }).ToList()
+        };
+    }
+
+    private static void EnsureSeed(AppDbContext db)
+    {
+        if (db.LinkCategories.Any()) return;
         var categories = new[]
         {
             new { Title = "📰 Actualités Astronomiques", Links = new[] {
@@ -60,97 +150,24 @@ public class LinksService
         for (var i = 0; i < categories.Length; i++)
         {
             var cat = categories[i];
-            var category = new UsefulLinkCategory
+            var category = new LinkCategoryEntity
             {
                 Id = Guid.NewGuid(),
                 Title = cat.Title,
                 Order = i
             };
-            var linkList = cat.Links.Select((l, j) => new UsefulLinkItem
+            var linkList = cat.Links.Select((l, j) => new LinkItemEntity
             {
                 Id = Guid.NewGuid(),
+                CategoryId = category.Id,
                 Name = l.Name,
                 Url = l.Url,
                 Description = l.Description,
                 Order = j
             }).ToList();
             category.Links = linkList;
-            data.Categories.Add(category);
+            db.LinkCategories.Add(category);
         }
-        return data;
-    }
-
-    public List<UsefulLinkCategory> GetAll()
-    {
-        var data = LoadData();
-        return data.Categories.OrderBy(c => c.Order).ToList();
-    }
-
-    public UsefulLinkCategory? GetCategory(Guid id)
-    {
-        return LoadData().Categories.FirstOrDefault(c => c.Id == id);
-    }
-
-    public UsefulLinkCategory UpdateCategory(Guid id, string title, List<UsefulLinkItem> links)
-    {
-        var data = LoadData();
-        var cat = data.Categories.FirstOrDefault(c => c.Id == id);
-        if (cat == null) return null!;
-        cat.Title = title ?? cat.Title;
-        for (var i = 0; i < links.Count; i++)
-        {
-            var l = links[i];
-            if (l.Id == Guid.Empty) l.Id = Guid.NewGuid();
-            l.Order = i;
-        }
-        cat.Links = links;
-        SaveData(data);
-        return cat;
-    }
-
-    public UsefulLinkCategory AddCategory(string title)
-    {
-        var data = LoadData();
-        var order = data.Categories.Count > 0 ? data.Categories.Max(c => c.Order) + 1 : 0;
-        var cat = new UsefulLinkCategory
-        {
-            Id = Guid.NewGuid(),
-            Title = title,
-            Order = order,
-            Links = new List<UsefulLinkItem>()
-        };
-        data.Categories.Add(cat);
-        SaveData(data);
-        return cat;
-    }
-
-    public bool DeleteCategory(Guid id)
-    {
-        var data = LoadData();
-        var cat = data.Categories.FirstOrDefault(c => c.Id == id);
-        if (cat == null) return false;
-        data.Categories.Remove(cat);
-        SaveData(data);
-        return true;
-    }
-
-    private LinksData LoadData()
-    {
-        if (!File.Exists(_dataPath))
-            return new LinksData();
-        try
-        {
-            var json = File.ReadAllText(_dataPath);
-            return JsonSerializer.Deserialize<LinksData>(json) ?? new LinksData();
-        }
-        catch
-        {
-            return new LinksData();
-        }
-    }
-
-    private void SaveData(LinksData data)
-    {
-        File.WriteAllText(_dataPath, JsonSerializer.Serialize(data, JsonOptions));
+        db.SaveChanges();
     }
 }

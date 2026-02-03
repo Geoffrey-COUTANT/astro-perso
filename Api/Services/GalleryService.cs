@@ -1,156 +1,192 @@
 using System.Text.Json;
+using Api.Data;
 using Api.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Services;
 
 public class GalleryService
 {
-    private readonly string _uploadPath;
-    private readonly string _dataPath;
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
+    private static readonly JsonSerializerOptions JsonOptions = new();
 
-    public GalleryService(IWebHostEnvironment env)
+    public GalleryService(IDbContextFactory<AppDbContext> dbFactory)
     {
-        _uploadPath = Path.Combine(env.ContentRootPath, "uploads", "gallery");
-        _dataPath = Path.Combine(_uploadPath, "data.json");
-        Directory.CreateDirectory(_uploadPath);
+        _dbFactory = dbFactory;
     }
 
     public List<GalleryImage> GetAll()
     {
-        var data = LoadData();
-        return data.Images.OrderBy(x => x.Order).ThenBy(x => x.CreatedAt).ToList();
+        using var db = _dbFactory.CreateDbContext();
+        return db.GalleryImages
+            .OrderBy(x => x.Order)
+            .ThenBy(x => x.CreatedAt)
+            .Select(x => new GalleryImage
+            {
+                Id = x.Id,
+                FileName = x.FileName,
+                Title = x.Title,
+                Description = x.Description,
+                Order = x.Order,
+                CreatedAt = x.CreatedAt
+            })
+            .ToList();
     }
 
     public GalleryImage? GetById(Guid id)
     {
-        return LoadData().Images.FirstOrDefault(x => x.Id == id);
+        using var db = _dbFactory.CreateDbContext();
+        var e = db.GalleryImages.Find(id);
+        return e == null ? null : ToModel(e);
     }
 
     public async Task<GalleryImage?> AddAsync(IFormFile file, string? title = null, CancellationToken ct = default)
     {
         if (file.Length == 0) return null;
-
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         var allowed = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg" };
         if (!allowed.Contains(ext)) return null;
 
-        var data = LoadData();
+        using var db = _dbFactory.CreateDbContext();
         var id = Guid.NewGuid();
-        var fileName = $"{id}{ext}";
-        var filePath = Path.Combine(_uploadPath, fileName);
-
-        await using (var stream = File.Create(filePath))
+        byte[] content;
+        await using (var stream = new MemoryStream())
+        {
             await file.CopyToAsync(stream, ct);
+            content = stream.ToArray();
+        }
 
-        var image = new GalleryImage
+        var maxOrder = await db.GalleryImages.AnyAsync(ct)
+            ? await db.GalleryImages.MaxAsync(x => x.Order, ct) + 1
+            : 0;
+
+        var entity = new GalleryImageEntity
         {
             Id = id,
-            FileName = fileName,
-            Title = title ?? $"Image {data.Images.Count + 1}",
-            Order = data.Images.Count,
-            CreatedAt = DateTime.UtcNow
+            FileName = $"{id}{ext}",
+            Title = title ?? $"Image {maxOrder + 1}",
+            Description = "Photo d'astronomie du Club Astro Véga de la Lyre",
+            Order = maxOrder,
+            CreatedAt = DateTime.UtcNow,
+            FileContent = content,
+            ContentType = file.ContentType ?? "application/octet-stream"
         };
-        data.Images.Add(image);
-        SaveData(data);
-        return image;
+        db.GalleryImages.Add(entity);
+        await db.SaveChangesAsync(ct);
+        return ToModel(entity);
     }
 
     public bool Delete(Guid id)
     {
-        var data = LoadData();
-        var img = data.Images.FirstOrDefault(x => x.Id == id);
+        using var db = _dbFactory.CreateDbContext();
+        var img = db.GalleryImages.Find(id);
         if (img == null) return false;
-
-        var filePath = Path.Combine(_uploadPath, img.FileName);
-        if (File.Exists(filePath))
-            File.Delete(filePath);
-
-        data.Images.Remove(img);
-        SaveData(data);
+        db.GalleryImages.Remove(img);
+        db.SaveChanges();
         return true;
     }
 
     public List<string> GetHiddenStaticIds()
     {
-        var data = LoadData();
-        return data.HiddenStaticIds?.ToList() ?? new List<string>();
+        return GetSettingList("HiddenStaticIds");
     }
 
     public void HideStaticId(string staticId)
     {
-        var data = LoadData();
-        data.HiddenStaticIds ??= new List<string>();
-        if (!data.HiddenStaticIds.Contains(staticId))
-        {
-            data.HiddenStaticIds.Add(staticId);
-            SaveData(data);
-        }
+        var list = GetSettingList("HiddenStaticIds");
+        if (list.Contains(staticId)) return;
+        list.Add(staticId);
+        SetSettingList("HiddenStaticIds", list);
     }
 
     public bool UnhideStaticId(string staticId)
     {
-        var data = LoadData();
-        if (data.HiddenStaticIds == null) return false;
-        var removed = data.HiddenStaticIds.Remove(staticId);
-        if (removed) SaveData(data);
-        return removed;
+        var list = GetSettingList("HiddenStaticIds");
+        if (!list.Remove(staticId)) return false;
+        SetSettingList("HiddenStaticIds", list);
+        return true;
     }
 
     public void SetUnifiedOrder(List<string> orderedIds)
     {
-        var data = LoadData();
-        data.UnifiedOrder = orderedIds ?? new List<string>();
-        SaveData(data);
+        SetSettingList("UnifiedOrder", orderedIds ?? new List<string>());
     }
 
     public List<string> GetUnifiedOrder()
     {
-        var data = LoadData();
-        return data.UnifiedOrder?.ToList() ?? new List<string>();
+        return GetSettingList("UnifiedOrder");
     }
 
     public bool ReorderImages(List<Guid> orderedIds)
     {
-        var data = LoadData();
+        using var db = _dbFactory.CreateDbContext();
+        var images = db.GalleryImages.ToList();
         var idsSet = new HashSet<Guid>(orderedIds);
-        
-        if (idsSet.Count != orderedIds.Count || !data.Images.All(img => idsSet.Contains(img.Id)))
+        if (idsSet.Count != orderedIds.Count || !images.All(img => idsSet.Contains(img.Id)))
             return false;
-
-        for (int i = 0; i < orderedIds.Count; i++)
+        for (var i = 0; i < orderedIds.Count; i++)
         {
-            var img = data.Images.FirstOrDefault(x => x.Id == orderedIds[i]);
+            var img = images.FirstOrDefault(x => x.Id == orderedIds[i]);
             if (img != null) img.Order = i;
         }
-        
-        SaveData(data);
+        db.SaveChanges();
         return true;
     }
 
     public string GetFileUrl(string fileName)
     {
-        return $"/uploads/gallery/{fileName}";
+        var id = fileName;
+        if (fileName.Contains('.'))
+            id = fileName.Substring(0, fileName.IndexOf('.'));
+        return Guid.TryParse(id, out var guid) ? $"/api/gallery/{guid}/file" : $"/uploads/gallery/{fileName}";
     }
 
-    private GalleryData LoadData()
+    public (byte[]? Content, string? ContentType)? GetFileContent(Guid id)
     {
-        if (!File.Exists(_dataPath))
-            return new GalleryData();
+        using var db = _dbFactory.CreateDbContext();
+        var e = db.GalleryImages.AsNoTracking().FirstOrDefault(x => x.Id == id);
+        if (e?.FileContent == null) return null;
+        return (e.FileContent, e.ContentType ?? "application/octet-stream");
+    }
 
+    private List<string> GetSettingList(string key)
+    {
+        using var db = _dbFactory.CreateDbContext();
+        var row = db.GallerySettings.Find(key);
+        if (row?.Value == null) return new List<string>();
         try
         {
-            var json = File.ReadAllText(_dataPath);
-            return JsonSerializer.Deserialize<GalleryData>(json) ?? new GalleryData();
+            return JsonSerializer.Deserialize<List<string>>(row.Value) ?? new List<string>();
         }
-        catch
-        {
-            return new GalleryData();
-        }
+        catch { return new List<string>(); }
     }
 
-    private void SaveData(GalleryData data)
+    private void SetSettingList(string key, List<string> list)
     {
-        File.WriteAllText(_dataPath, JsonSerializer.Serialize(data, JsonOptions));
+        using var db = _dbFactory.CreateDbContext();
+        var value = JsonSerializer.Serialize(list);
+        var row = db.GallerySettings.Find(key);
+        if (row != null)
+        {
+            row.Value = value;
+        }
+        else
+        {
+            db.GallerySettings.Add(new GallerySettingEntity { Key = key, Value = value });
+        }
+        db.SaveChanges();
+    }
+
+    private static GalleryImage ToModel(GalleryImageEntity e)
+    {
+        return new GalleryImage
+        {
+            Id = e.Id,
+            FileName = e.FileName,
+            Title = e.Title,
+            Description = e.Description,
+            Order = e.Order,
+            CreatedAt = e.CreatedAt
+        };
     }
 }

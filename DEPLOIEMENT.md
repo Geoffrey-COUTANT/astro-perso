@@ -110,12 +110,23 @@ Railway va détecter un projet à la racine. Il faut lui indiquer que le code à
 
 Si Railway ne propose pas de Root Directory dans l'interface, vous pouvez ajouter un fichier **`railway.json`** ou **`nixpacks.toml`** à la racine du repo pour indiquer le sous-dossier. Sinon, créez un **Dockerfile** dans `Api/` (voir point 7).
 
-### 3. Variables d'environnement
+### 3. Base de données PostgreSQL (obligatoire)
 
-Dans le même service, onglet **Variables** :
+L’API utilise **PostgreSQL** pour tout le contenu (galerie, réunions, liens utiles, contact). Les images uploadées sont stockées dans la base (plus de fichiers sur le disque).
+
+- Dans le projet Railway, cliquez sur **« Add Plugin »** ou **« New »** → **PostgreSQL**.
+- Railway crée une base et injecte automatiquement la variable **`DATABASE_URL`** dans votre service API (si les deux sont dans le même projet, la variable est souvent déjà liée).
+- Sinon, dans le service API, onglet **Variables**, vérifiez que **`DATABASE_URL`** est bien définie (vous pouvez la recopier depuis le service PostgreSQL → **Variables** → `DATABASE_URL`).
+
+Au démarrage, l’API applique automatiquement les **migrations EF Core** (création/mise à jour des tables). Aucune action manuelle sur la base n’est nécessaire.
+
+### 4. Variables d'environnement
+
+Dans le même service API, onglet **Variables** :
 
 | Variable | Exemple | Description |
 |----------|---------|-------------|
+| `DATABASE_URL` | *(fourni par le plugin PostgreSQL)* | Chaîne de connexion PostgreSQL (obligatoire) |
 | `Admin__Login` | `admin` | Identifiant de connexion admin |
 | `Admin__Password` | `votre-mot-de-passe-secret` | Mot de passe admin |
 | `Admin__ApiKey` | `une-longue-cle-secrete` | Clé utilisée comme token après login |
@@ -124,7 +135,7 @@ En .NET, les deux-points dans `Admin:Login` deviennent **deux underscores** en v
 
 Le **port** est en général fourni automatiquement par Railway via la variable **`PORT`** ; votre `Program.cs` l'utilise déjà.
 
-### 4. CORS : autoriser votre front
+### 5. CORS : autoriser votre front
 
 Votre front sera sur une URL du type `https://votreuser.github.io` ou `https://votre-projet.vercel.app`. Il faut autoriser cette origine dans l'API.
 
@@ -141,18 +152,18 @@ policy.WithOrigins(
 
 Remplacez par vos vraies URLs (sans slash final). Puis commitez et poussez ; Railway redéploiera.
 
-### 5. Obtenir l'URL de l'API
+### 6. Obtenir l'URL de l'API
 
 - Dans Railway, onglet **Settings** du service, section **Networking** ou **Domains**.
 - Généralement Railway vous donne une URL du type : `https://votre-api-production-xxxx.up.railway.app`.
 - **Utilisez cette URL** comme `REACT_APP_API_URL` pour le build du front (voir Option A ou B plus haut).
 
-### 6. Données et dossier `uploads`
+### 7. Données (base PostgreSQL)
 
-- Sur Railway, le système de fichiers est **éphémère** : à chaque redéploiement, le contenu du dossier `uploads` (images de la galerie, etc.) peut être perdu.
-- Pour une persistance réelle, il faudrait utiliser un **volume** Railway (si disponible sur votre offre) ou un stockage externe (S3, Azure Blob, etc.). Pour un petit site, vous pouvez accepter de repartir de zéro après un redéploiement ou tester les volumes Railway.
+- Toutes les données (galerie, réunions, liens utiles, contact) sont en base **PostgreSQL**.
+- Les **images de la galerie** uploadées sont stockées dans la base (colonnes binaires), plus de dossier `uploads` pour la galerie. La persistance est donc gérée par Railway via le plugin PostgreSQL.
 
-### 7. Si Railway ne détecte pas le projet .NET (option Dockerfile)
+### 8. Si Railway ne détecte pas le projet .NET (option Dockerfile)
 
 Si après avoir mis le Root Directory à `Api` ça ne build pas, créez **`Api/Dockerfile`** :
 
@@ -190,14 +201,32 @@ Pour un petit site type club, **Railway** ou **Fly.io** sont souvent les plus si
 Sur ces hébergeurs, il faut :
 - Déployer le **dossier `Api`** (projet .NET).
 - Définir les variables d’environnement (Admin:Login, Admin:Password, Admin:ApiKey, etc.).
-- Vérifier que le **dossier `uploads`** est persistant (selon l’offre) ou prévoir un volume/storage.
+- Configurer la **base PostgreSQL** (variable `DATABASE_URL` sur Railway ; tout le contenu, y compris les images de la galerie, est stocké en base).
+
+---
+
+## Développement local avec la base de données
+
+- Installez **PostgreSQL** en local (ou Docker : `docker run -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres`).
+- Dans `Api/appsettings.Development.json`, configurez `ConnectionStrings:DefaultConnection` (ex. `Host=localhost;Database=astro;Username=postgres;Password=postgres`).
+- Au premier lancement de l’API (`dotnet run` dans `Api/`), les **migrations** sont appliquées automatiquement.
+
+---
+
+## Docker (image + lancement local)
+
+- **Image API** : `Api/Dockerfile` (multi-stage .NET 9).
+- **Lancer API + PostgreSQL** (à la racine du repo) : `docker compose up -d`  
+  → API sur **http://localhost:5050**, PostgreSQL sur **5432**. Migrations appliquées au démarrage.
+- **Build manuel** : `docker build -t astro-api ./Api`
+- **Railway** : Root Directory = `Api`, build = Dockerfile. Variables `PORT` et `DATABASE_URL` injectées automatiquement.
 
 ---
 
 ## Récap
 
 1. **Front** : soit **GitHub Pages** (build avec `REACT_APP_API_URL` puis `yarn deploy` ou une Action), soit **Vercel** (connect repo + `REACT_APP_API_URL` dans les env) → **Vercel est souvent plus simple.**
-2. **API** : à héberger **obligatoirement ailleurs** (Railway, Fly.io, Azure, VPS).
-3. **Config** : CORS sur l’API = URL réelle du front (GitHub Pages ou Vercel). Front = `REACT_APP_API_URL` = URL réelle de l’API.
+2. **API** : à héberger **obligatoirement ailleurs** (Railway, Fly.io, Azure, VPS), avec une **base PostgreSQL** (sur Railway : plugin PostgreSQL + variable `DATABASE_URL`).
+3. **Config** : CORS sur l’API = URL du front. Front = `REACT_APP_API_URL` = URL de l’API. API = `DATABASE_URL` (Railway) ou `ConnectionStrings:DefaultConnection` (local).
 
 Si vous me dites si vous partez sur GitHub Pages ou Vercel pour le front, je peux détailler les étapes exactes (y compris un exemple de GitHub Action pour Pages ou la config Vercel).

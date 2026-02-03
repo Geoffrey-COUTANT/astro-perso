@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
+using Api.Data;
 using Api.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +9,14 @@ var builder = WebApplication.CreateBuilder(args);
 var loginAttempts = new ConcurrentDictionary<string, List<DateTime>>();
 const int LoginMaxAttempts = 5;
 const int LoginWindowMinutes = 15;
+
+var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(connectionString))
+    throw new InvalidOperationException("Configurez DATABASE_URL (Railway) ou ConnectionStrings:DefaultConnection (local).");
+
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddCors(options =>
 {
@@ -32,6 +42,12 @@ if (!string.IsNullOrEmpty(port))
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext();
+    db.Database.Migrate();
+}
 
 app.Use(async (context, next) =>
 {
@@ -98,6 +114,13 @@ app.MapPost("/api/gallery", async (HttpRequest request, GalleryService gallery, 
         url = gallery.GetFileUrl(added.FileName),
         order = added.Order
     });
+});
+
+app.MapGet("/api/gallery/{id:guid}/file", (Guid id, GalleryService gallery) =>
+{
+    var file = gallery.GetFileContent(id);
+    if (file == null) return Results.NotFound();
+    return Results.File(file.Value.Content!, file.Value.ContentType ?? "application/octet-stream");
 });
 
 app.MapDelete("/api/gallery/{id:guid}", (Guid id, HttpRequest request, GalleryService gallery) =>

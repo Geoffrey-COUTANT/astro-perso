@@ -1,35 +1,46 @@
-using System.Text.Json;
+using Api.Data;
 using Api.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Services;
 
 public class MeetingsService
 {
-    private readonly string _dataPath;
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
 
-    public MeetingsService(IWebHostEnvironment env)
+    public MeetingsService(IDbContextFactory<AppDbContext> dbFactory)
     {
-        var meetingsPath = Path.Combine(env.ContentRootPath, "uploads", "meetings");
-        Directory.CreateDirectory(meetingsPath);
-        _dataPath = Path.Combine(meetingsPath, "data.json");
+        _dbFactory = dbFactory;
     }
 
     public List<Meeting> GetAll()
     {
-        var data = LoadData();
-        return data.Meetings.OrderBy(x => x.StartDate).ToList();
+        using var db = _dbFactory.CreateDbContext();
+        return db.Meetings
+            .OrderBy(x => x.StartDate)
+            .Select(x => new Meeting
+            {
+                Id = x.Id,
+                Title = x.Title,
+                Description = x.Description,
+                StartDate = x.StartDate,
+                EndDate = x.EndDate,
+                CreatedAt = x.CreatedAt
+            })
+            .ToList();
     }
 
     public Meeting? GetById(Guid id)
     {
-        return LoadData().Meetings.FirstOrDefault(x => x.Id == id);
+        using var db = _dbFactory.CreateDbContext();
+        var e = db.Meetings.Find(id);
+        return e == null ? null : ToModel(e);
     }
 
     public Meeting Add(string title, string description, DateTime startDate, DateTime endDate)
     {
-        var data = LoadData();
-        var meeting = new Meeting
+        using var db = _dbFactory.CreateDbContext();
+        var entity = new MeetingEntity
         {
             Id = Guid.NewGuid(),
             Title = title,
@@ -38,78 +49,69 @@ public class MeetingsService
             EndDate = endDate,
             CreatedAt = DateTime.UtcNow
         };
-        data.Meetings.Add(meeting);
-        SaveData(data);
-        return meeting;
+        db.Meetings.Add(entity);
+        db.SaveChanges();
+        return ToModel(entity);
     }
 
     public bool Update(Guid id, string title, string description, DateTime startDate, DateTime endDate)
     {
-        var data = LoadData();
-        var meeting = data.Meetings.FirstOrDefault(x => x.Id == id);
+        using var db = _dbFactory.CreateDbContext();
+        var meeting = db.Meetings.Find(id);
         if (meeting == null) return false;
-
         meeting.Title = title;
         meeting.Description = description ?? "";
         meeting.StartDate = startDate;
         meeting.EndDate = endDate;
-        SaveData(data);
+        db.SaveChanges();
         return true;
     }
 
     public bool Delete(Guid id)
     {
-        var data = LoadData();
-        var meeting = data.Meetings.FirstOrDefault(x => x.Id == id);
+        using var db = _dbFactory.CreateDbContext();
+        var meeting = db.Meetings.Find(id);
         if (meeting == null) return false;
-
-        data.Meetings.Remove(meeting);
-        SaveData(data);
+        db.Meetings.Remove(meeting);
+        db.SaveChanges();
         return true;
     }
 
     public List<string> GetHiddenStaticIds()
     {
-        var data = LoadData();
-        return data.HiddenStaticIds?.ToList() ?? new List<string>();
+        using var db = _dbFactory.CreateDbContext();
+        return db.MeetingHiddenStatic.Select(x => x.StaticId).ToList();
     }
 
     public void HideStaticId(string staticId)
     {
-        var data = LoadData();
-        data.HiddenStaticIds ??= new List<string>();
-        if (!string.IsNullOrEmpty(staticId) && !data.HiddenStaticIds.Contains(staticId))
-            data.HiddenStaticIds.Add(staticId);
-        SaveData(data);
+        if (string.IsNullOrEmpty(staticId)) return;
+        using var db = _dbFactory.CreateDbContext();
+        if (db.MeetingHiddenStatic.Any(x => x.StaticId == staticId)) return;
+        db.MeetingHiddenStatic.Add(new MeetingHiddenStaticEntity { StaticId = staticId });
+        db.SaveChanges();
     }
 
     public bool UnhideStaticId(string staticId)
     {
-        var data = LoadData();
-        if (data.HiddenStaticIds == null) return false;
-        var removed = data.HiddenStaticIds.Remove(staticId);
-        SaveData(data);
-        return removed;
+        using var db = _dbFactory.CreateDbContext();
+        var row = db.MeetingHiddenStatic.FirstOrDefault(x => x.StaticId == staticId);
+        if (row == null) return false;
+        db.MeetingHiddenStatic.Remove(row);
+        db.SaveChanges();
+        return true;
     }
 
-    private MeetingsData LoadData()
+    private static Meeting ToModel(MeetingEntity e)
     {
-        if (!File.Exists(_dataPath))
-            return new MeetingsData();
-
-        try
+        return new Meeting
         {
-            var json = File.ReadAllText(_dataPath);
-            return JsonSerializer.Deserialize<MeetingsData>(json) ?? new MeetingsData();
-        }
-        catch
-        {
-            return new MeetingsData();
-        }
-    }
-
-    private void SaveData(MeetingsData data)
-    {
-        File.WriteAllText(_dataPath, JsonSerializer.Serialize(data, JsonOptions));
+            Id = e.Id,
+            Title = e.Title,
+            Description = e.Description,
+            StartDate = e.StartDate,
+            EndDate = e.EndDate,
+            CreatedAt = e.CreatedAt
+        };
     }
 }
