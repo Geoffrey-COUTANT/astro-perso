@@ -3,69 +3,71 @@ import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-// Import de toutes les images du dossier images/
-import image14 from "./images/image 14.svg";
-import image15 from "./images/image 15.svg";
-import image16 from "./images/image 16.svg";
-import image17 from "./images/image 17.svg";
-import image20 from "./images/image 20.svg";
-import image21 from "./images/image 21.svg";
-import image22 from "./images/image 22.svg";
-import image23 from "./images/image 23.svg";
-import image24 from "./images/image 24.svg";
-import image25 from "./images/image 25.svg";
-import image26 from "./images/image 26.svg";
-import image27 from "./images/image 27.svg";
-import image28 from "./images/image 28.svg";
-import image29 from "./images/image 29.svg";
-import image30 from "./images/image 30.svg";
-import image31 from "./images/image 31.svg";
-import image32 from "./images/image 32.svg";
-import image33 from "./images/image 33.svg";
-import image34 from "./images/image 34.svg";
-import image35 from "./images/image 35.svg";
-import image36 from "./images/image 36.svg";
-import image37 from "./images/image 37.svg";
-import image38 from "./images/image 38.svg";
-import image39 from "./images/image 39.svg";
-import image40 from "./images/image 40.svg";
-import image41 from "./images/image 41.svg";
-import image42 from "./images/image 42.svg";
-import image43 from "./images/image 43.svg";
-import image44 from "./images/image 44.svg";
-import image45 from "./images/image 45.svg";
-import image46 from "./images/image 46.svg";
-import image47 from "./images/image 47.svg";
+import { allImages, imageNumbers } from "./data/galleryStaticImages";
 
-const allImages = [
-    image14, image15, image16, image17, image20, image21, image22, image23, image24, image25,
-    image26, image27, image28, image29, image30, image31, image32, image33, image34, image35,
-    image36, image37, image38, image39, image40, image41, image42, image43, image44, image45,
-    image46, image47
-];
-
-const imageNumbers = [14, 15, 16, 17, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47];
+const API_BASE = process.env.REACT_APP_API_URL || "";
 
 function mod(n, m) {
     return ((n % m) + m) % m;
 }
 
 function Galerie() {
-    const images = useMemo(() => {
-        return allImages.map((url, idx) => ({
-            id: idx,
-            title: `Image ${imageNumbers[idx] ?? idx + 1}`,
-            description: "Photo d'astronomie du Club Astro Véga de la Lyre",
-            url,
-        }));
+    const [apiImages, setApiImages] = useState([]);
+    const [hiddenStaticIds, setHiddenStaticIds] = useState([]);
+    const [unifiedOrder, setUnifiedOrder] = useState([]);
+
+    useEffect(() => {
+        if (!API_BASE) return;
+        Promise.all([
+            fetch(`${API_BASE}/api/gallery`).then((r) => (r.ok ? r.json() : [])),
+            fetch(`${API_BASE}/api/gallery/hidden-static`).then((r) => (r.ok ? r.json() : [])),
+            fetch(`${API_BASE}/api/gallery/unified-order`).then((r) => (r.ok ? r.json() : [])),
+        ])
+            .then(([apiData, hiddenData, orderData]) => {
+                setApiImages(Array.isArray(apiData) ? apiData.map((img, idx) => ({
+                    id: String(img.id),
+                    title: img.title || `Image ${idx + 1}`,
+                    description: img.description || "Photo d'astronomie du Club Astro Véga de la Lyre",
+                    url: img.url?.startsWith("http") ? img.url : `${API_BASE}${img.url}`,
+                })) : []);
+                setHiddenStaticIds(Array.isArray(hiddenData) ? hiddenData : []);
+                setUnifiedOrder(Array.isArray(orderData) ? orderData : []);
+            })
+            .catch(() => {});
     }, []);
+
+    const staticImages = useMemo(
+        () =>
+            allImages.map((url, idx) => ({
+                id: `static-${idx}`,
+                title: `Image ${imageNumbers[idx] ?? idx + 1}`,
+                description: "Photo d'astronomie du Club Astro Véga de la Lyre",
+                url,
+            })),
+        []
+    );
+
+    const visibleStatic = useMemo(
+        () => staticImages.filter((img) => !hiddenStaticIds.includes(img.id)),
+        [staticImages, hiddenStaticIds]
+    );
+
+    const images = useMemo(() => {
+        const all = [...apiImages, ...visibleStatic];
+        if (unifiedOrder.length === 0) return all;
+        const orderMap = new Map(unifiedOrder.map((id, i) => [id, i]));
+        return all.sort((a, b) => {
+            const ia = orderMap.has(a.id) ? orderMap.get(a.id) : 9999;
+            const ib = orderMap.has(b.id) ? orderMap.get(b.id) : 9999;
+            return ia - ib;
+        });
+    }, [apiImages, visibleStatic, unifiedOrder]);
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedImage, setSelectedImage] = useState(null);
     const [isUserInteracting, setIsUserInteracting] = useState(false);
     const idleTimeoutRef = useRef(null);
 
-    // Drag / swipe (pointer)
     const pointerDownRef = useRef(false);
     const startXRef = useRef(0);
     const deltaXRef = useRef(0);
@@ -86,7 +88,6 @@ function Galerie() {
         setCurrentIndex((i) => mod(i - 1, images.length));
     };
 
-    // Auto-défilement doux (pause si interaction ou modal ouverte)
     useEffect(() => {
         if (images.length === 0) return;
         if (isUserInteracting || pointerDownRef.current || selectedImage) return;
@@ -98,7 +99,6 @@ function Galerie() {
         return () => clearInterval(t);
     }, [images.length, isUserInteracting, selectedImage]);
 
-    // Clavier
     useEffect(() => {
         const onKeyDown = (e) => {
             if (e.key === "ArrowLeft") prev();
@@ -107,7 +107,7 @@ function Galerie() {
         };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [images.length]);
 
     useEffect(() => {
@@ -116,7 +116,6 @@ function Galerie() {
         };
     }, []);
 
-    // Coverflow: on affiche 5 items autour du centre
     const slots = [-2, -1, 0, 1, 2];
     const visible = slots.map((offset) => {
         const idx = mod(currentIndex + offset, images.length);
@@ -128,7 +127,7 @@ function Galerie() {
         pointerDownRef.current = true;
         startXRef.current = e.clientX;
         deltaXRef.current = 0;
-        try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* noop */ }
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch {  }
     };
 
     const onPointerMove = (e) => {
@@ -182,14 +181,12 @@ function Galerie() {
                             onMouseEnter={resetIdle}
                             onWheel={resetIdle}
                         >
-                            {/* Fond léger pour la profondeur */}
                             <div className="absolute inset-0 bg-black bg-opacity-10 backdrop-blur-[1px]" />
 
                             {visible.map(({ offset, img }) => {
                                 const isCenter = offset === 0;
 
-                                // Paramètres visuels du coverflow
-                                const x = offset * 260; // espacement horizontal
+                                const x = offset * 260;
                                 const scale = isCenter ? 1 : (Math.abs(offset) === 1 ? 0.82 : 0.65);
                                 const rotateY = isCenter ? 0 : (offset < 0 ? 22 : -22);
                                 const opacity = isCenter ? 1 : (Math.abs(offset) === 1 ? 0.75 : 0.35);

@@ -8,14 +8,12 @@ function Home() {
         <div className='flex flex-col bg-[url("./components/img/background-home.svg")] bg-cover bg-center min-h-screen w-full text-white item-center text-center relative overflow-hidden'>
             <Header />
             
-            {/* Planète Terre en arrière-plan */}
             <div className="absolute inset-0 w-full h-full z-0 flex items-center justify-center">
                 <div className="w-full h-full min-w-[800px] min-h-[800px] max-w-[1200px] max-h-[1200px]">
                     <EarthScene />
                 </div>
             </div>
             
-            {/* pointer-events-none : les clics passent à travers vers la planète pour pouvoir la faire tourner */}
             <div className="flex-grow flex flex-col justify-center items-center mt-20 font-kodchasan font-medium relative z-10 pointer-events-none">
                 <h1 className='text-6xl mb-4 animate-fade-scale'>Club Astro Véga de la Lyre</h1>
                 <h1 className='text-3xl my-3 animate-fade-scale' style={{ animationDelay: '0.2s' }}>de</h1>

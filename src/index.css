@@ -8,7 +8,6 @@
   }
 }
 
-/* Animations personnalisées originales */
 @keyframes floatIn {
   0% {
     opacity: 0;
@@ -127,7 +126,6 @@
   }
 }
 
-/* Classes d'animation personnalisées */
 .animate-float-in {
   animation: floatIn 0.8s ease-out forwards;
 }
@@ -164,7 +162,6 @@
   animation: bounceIn 1s ease-out forwards;
 }
 
-/* Délais d'animation */
 .animation-delay-100 {
   animation-delay: 100ms;
 }
@@ -201,7 +198,6 @@
   animation-delay: 900ms;
 }
 
-/* Masquer la scrollbar pour le carrousel */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -211,7 +207,6 @@
   display: none;
 }
 
-/* Snap scroll pour le carrousel */
 .snap-x {
   scroll-snap-type: x mandatory;
 }
@@ -224,7 +219,6 @@
   scroll-snap-type: x mandatory;
 }
 
-/* Scrollbar personnalisée pour les descriptions */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(96, 165, 250, 0.5) transparent;

@@ -15,11 +15,9 @@ function Meteo() {
 
     return (
         <div className="w-full text-white relative flex flex-col min-h-screen">
-            {/* Header fixe au-dessus des 3 sections : les fonds passent derrière (comme Réunions) */}
             <div className="fixed top-0 left-0 right-0 z-[100]">
                 <Header />
             </div>
-            {/* ========== SECTION 1 : Premier fond ========== */}
             <section
                 className="relative min-h-[100vh] flex flex-col bg-[url('./components/img/first-bg-meteo.svg')] bg-cover bg-center bg-fixed"
                 aria-label="Météo & Astronomie"
@@ -116,7 +114,6 @@ function Meteo() {
                 <div className="h-16 bg-gradient-to-b from-transparent to-black/50" aria-hidden="true" />
             </section>
 
-            {/* ========== SECTION 2 : Deuxième fond (Pickering) ========== */}
             <section
                 className="relative min-h-screen flex flex-col bg-[url('./components/img/second-bg-meteo.svg')] bg-contain sm:bg-cover bg-center bg-fixed"
                 aria-label="Échelle de Pickering"
@@ -197,7 +194,6 @@ function Meteo() {
                 <div className="h-12 bg-gradient-to-b from-transparent to-black/40" aria-hidden="true" />
             </section>
 
-            {/* ========== SECTION 3 : Troisième fond (Pour aller plus loin) ========== */}
             <section
                 className="relative min-h-screen flex flex-col bg-[url('./components/img/third-bg-meteo.svg')] bg-cover bg-center bg-fixed"
                 aria-label="Ressources et liens"

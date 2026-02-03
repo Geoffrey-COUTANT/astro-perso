@@ -4,14 +4,49 @@ import "aos/dist/aos.css";
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
 
+const API_BASE = process.env.REACT_APP_API_URL || "";
+
+const DEFAULT_CONTACT = {
+    email: "vegastro17@gmail.com",
+    phone: "06 71 36 86 21",
+    addressLine1: "Club Astro Véga de la Lyre",
+    addressLine2: "17150 BOISREDON, France",
+};
+
 function Contact() {
     const [showDonationModal, setShowDonationModal] = useState(false);
     const [donationData, setDonationData] = useState(null);
-    const [donationAmount, setDonationAmount] = useState('');
+    const [donationAmount, setDonationAmount] = useState("");
+    const [contact, setContact] = useState(DEFAULT_CONTACT);
 
     useEffect(() => {
         AOS.init({ duration: 1000, once: false });
     }, []);
+
+    useEffect(() => {
+        if (!API_BASE) return;
+        fetch(`${API_BASE}/api/contact`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data) => {
+                if (data) setContact(data);
+            })
+            .catch(() => {});
+    }, []);
+
+    const handleContactSubmit = (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const name = form.nom?.value?.trim() || "";
+        const fromEmail = form.email?.value?.trim() || "";
+        const subject = form.sujet?.value?.trim() || "";
+        const message = form.message?.value?.trim() || "";
+        const toEmail = contact.email || DEFAULT_CONTACT.email;
+        const body = `Nom : ${name}\nEmail expéditeur : ${fromEmail}\n\n${message}`;
+        const mailto = `mailto:${encodeURIComponent(toEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.location.href = mailto;
+    };
+
+    const telHref = (contact.phone || "").replace(/\s/g, "");
 
     return (
         <div className='w-full text-white text-center'>
@@ -29,8 +64,8 @@ function Contact() {
                                     <span className="text-3xl">📧</span>
                                     <div>
                                         <p className="font-semibold">Email :</p>
-                                        <a href="mailto:vegastro17@gmail.com" className="underline hover:text-gray-300">
-                                            vegastro17@gmail.com
+                                        <a href={`mailto:${contact.email || DEFAULT_CONTACT.email}`} className="underline hover:text-gray-300">
+                                            {contact.email || DEFAULT_CONTACT.email}
                                         </a>
                                     </div>
                                 </div>
@@ -38,8 +73,8 @@ function Contact() {
                                     <span className="text-3xl">📱</span>
                                     <div>
                                         <p className="font-semibold">Téléphone :</p>
-                                        <a href="tel:+33671368621" className="underline hover:text-gray-300">
-                                            06 71 36 86 21
+                                        <a href={telHref ? `tel:${telHref}` : "#"} className="underline hover:text-gray-300">
+                                            {contact.phone || DEFAULT_CONTACT.phone}
                                         </a>
                                     </div>
                                 </div>
@@ -47,8 +82,8 @@ function Contact() {
                                     <span className="text-3xl">📍</span>
                                     <div>
                                         <p className="font-semibold">Adresse :</p>
-                                        <p>Club Astro Véga de la Lyre</p>
-                                        <p>17150 BOISREDON, France</p>
+                                        <p>{contact.addressLine1 || DEFAULT_CONTACT.addressLine1}</p>
+                                        <p>{contact.addressLine2 || DEFAULT_CONTACT.addressLine2}</p>
                                     </div>
                                 </div>
                             </div>
@@ -56,20 +91,22 @@ function Contact() {
 
                         <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 text-left animate-slide-right animation-delay-400">
                             <h2 className='text-3xl font-bold mb-6 text-center'>Formulaire de contact</h2>
-                            <form className="space-y-4">
+                            <form className="space-y-4" onSubmit={handleContactSubmit}>
                                 <div>
                                     <label className="block text-lg mb-2">Nom *</label>
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        name="nom"
+                                        type="text"
                                         required
                                         className="w-full p-3 rounded-lg bg-white bg-opacity-20 text-white placeholder-gray-300 border border-white border-opacity-30 focus:outline-none focus:border-opacity-50"
                                         placeholder="Votre nom"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-lg mb-2">Email *</label>
-                                    <input 
-                                        type="email" 
+                                    <label className="block text-lg mb-2">Votre email *</label>
+                                    <input
+                                        name="email"
+                                        type="email"
                                         required
                                         className="w-full p-3 rounded-lg bg-white bg-opacity-20 text-white placeholder-gray-300 border border-white border-opacity-30 focus:outline-none focus:border-opacity-50"
                                         placeholder="votre.email@exemple.fr"
@@ -77,8 +114,9 @@ function Contact() {
                                 </div>
                                 <div>
                                     <label className="block text-lg mb-2">Sujet *</label>
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        name="sujet"
+                                        type="text"
                                         required
                                         className="w-full p-3 rounded-lg bg-white bg-opacity-20 text-white placeholder-gray-300 border border-white border-opacity-30 focus:outline-none focus:border-opacity-50"
                                         placeholder="Sujet de votre message"
@@ -86,14 +124,15 @@ function Contact() {
                                 </div>
                                 <div>
                                     <label className="block text-lg mb-2">Message *</label>
-                                    <textarea 
+                                    <textarea
+                                        name="message"
                                         required
                                         rows="6"
                                         className="w-full p-3 rounded-lg bg-white bg-opacity-20 text-white placeholder-gray-300 border border-white border-opacity-30 focus:outline-none focus:border-opacity-50 resize-none"
                                         placeholder="Votre message..."
                                     />
                                 </div>
-                                <button 
+                                <button
                                     type="submit"
                                     className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300"
                                 >
@@ -115,7 +154,6 @@ function Contact() {
                 <Footer />
             </div>
 
-            {/* Modal de confirmation de don */}
             {showDonationModal && (
                 <div 
                     className="fixed inset-0 bg-black bg-opacity-80 z-50 flex justify-center items-center p-4 animate-fade-scale"
@@ -125,7 +163,6 @@ function Contact() {
                         className="bg-gradient-to-br from-green-500 via-blue-500 to-purple-600 rounded-3xl p-8 max-w-md w-full text-white relative overflow-hidden animate-zoom-rotate shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Effet de particules animées en arrière-plan */}
                         <div className="absolute inset-0 opacity-20">
                             <div className="absolute top-4 left-4 w-3 h-3 bg-white rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
                             <div className="absolute top-8 right-8 w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
@@ -133,9 +170,7 @@ function Contact() {
                             <div className="absolute bottom-4 right-4 w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '1.5s' }}></div>
                         </div>
 
-                        {/* Contenu du modal */}
                         <div className="relative z-10">
-                            {/* Icône animée */}
                             <div className="text-center mb-6">
                                 <div className="inline-block text-8xl animate-bounce">
                                     ✨💝✨
@@ -150,7 +185,6 @@ function Contact() {
                                 (Simulation fictive - Aucun paiement réel n'a été effectué)
                             </p>
 
-                            {/* Détails du don */}
                             <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-xl p-6 mb-6 space-y-3">
                                 <div className="flex justify-between items-center">
                                     <span className="text-gray-200">Donateur :</span>
@@ -174,14 +208,12 @@ function Contact() {
                                 )}
                             </div>
 
-                            {/* Message de confirmation */}
                             <div className="text-center mb-6">
                                 <p className="text-lg text-gray-100">
                                     Votre soutien nous aide à continuer nos activités astronomiques ! 🌟
                                 </p>
                             </div>
 
-                            {/* Bouton de fermeture */}
                             <button
                                 onClick={() => setShowDonationModal(false)}
                                 className="w-full bg-white text-green-600 font-bold py-4 px-6 rounded-xl hover:bg-gray-100 transition duration-300 text-xl shadow-lg transform hover:scale-105"

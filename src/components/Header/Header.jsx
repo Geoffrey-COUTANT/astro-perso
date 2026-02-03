@@ -19,15 +19,12 @@ function Header() {
 
     return (
         <header className="text-white w-full sticky backdrop-blur-md bg-transparent top-0 left-0 z-[100]">
-            {/* Barre principale : logo à gauche, menu centre (desktop) et burger à droite (mobile) */}
             <div className="mx-auto px-4 sm:px-8 lg:px-14 py-4 flex items-center justify-between w-full">
 
-                {/* Logo */}
                 <div className="flex">
                     <img src={logo} alt="logo" className="h-24 w-24" />
                 </div>
 
-                {/* Menu Desktop */}
                 <nav className="ml-20 hidden md:flex space-x-20 w-full justify-center text-2xl">
                     {menuItems.map(({ name, path }) => (
                         <Link key={name} to={path} className={`hover:text-gray-300 transition ${location.pathname === path ? "underline underline-offset-4 decoration-white" : ""}`}>
@@ -36,13 +33,11 @@ function Header() {
                     ))}
                 </nav>
 
-                {/* Menu Burger Mobile */}
                 <button className="md:hidden" onClick={() => setIsOpen(!isOpen)}>
                     {isOpen ? <XCircle size={30} /> : <Menu size={30} />}
                 </button>
             </div>
 
-            {/* Menu Mobile */}
             {isOpen && (
                 <div className="md:hidden py-4 space-y-3 text-center">
                     {menuItems.map(({ name, path }) => (

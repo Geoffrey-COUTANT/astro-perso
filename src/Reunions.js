@@ -4,40 +4,52 @@ import Header from "./components/Header/Header";
 import moment from 'moment';
 import 'moment/locale/fr';
 import { Calendar, MapPin, Clock, Info } from "lucide-react";
+import { staticMeetings } from "./data/staticMeetings";
 
 moment.locale('fr');
 
-const Reunions = () => {
-    const [events] = useState([
-        { title: 'Assemblée Générale', start: new Date(2026, 0, 23, 20, 30), end: new Date(2026, 0, 23, 22, 30), description: '' },
-        { title: 'Réunion de fin d\'année', start: new Date(2025, 11, 19, 20, 30), end: new Date(2025, 11, 19), description: 'compte rendu de la dernière réunion de l\'année' },
-        { title: 'Réunion A', start: new Date(2025, 1, 21, 21, 0), end: new Date(2025, 1, 21, 23, 0), description: 'Résumé de la réunion A' },
-        { title: 'Réunion B', start: new Date(2025, 2, 28, 21, 0), end: new Date(2025, 2, 28, 23, 0), description: 'Résumé de la réunion B' },
-        { title: 'Réunion C', start: new Date(2025, 3, 25, 21, 30), end: new Date(2025, 3, 25, 23, 30), description: 'Résumé de la réunion C' },
-        { title: 'Réunion D', start: new Date(2025, 4, 23, 21, 30), end: new Date(2025, 4, 23, 23, 30), description: 'Résumé de la réunion D' },
-        { title: 'Réunion E', start: new Date(2025, 5, 20, 21, 30), end: new Date(2025, 5, 20, 21, 30), description: 'Résumé de la réunion E' },
-        { title: 'Soirée festive - Après-midi / soirée', start: new Date(2025, 6, 12, 13, 30), end: new Date(2025, 6, 12, 23, 30), description: 'Résumé de la soirée festive' },
-        { title: 'Réunion F', start: new Date(2025, 6, 18, 21, 30), end: new Date(2025, 6, 18, 21, 30), description: 'Résumé de la réunion F' },
-        { title: 'Nuit des étoiles', start: new Date(2025, 7, 1, 22, 30), end: new Date(2025, 7, 1, 0, 30), description: 'Résumé de la nuit étoilée' },
-        { title: 'Réunion ok', start: new Date(2026, 1, 21, 21, 0), end: new Date(2025, 1, 21), description: '' },
-        { title: 'Réunion ok', start: new Date(2026, 2, 28, 21, 0), end: new Date(2025, 2, 28), description: '' },
-        { title: 'Réunion ok', start: new Date(2026, 3, 25, 21, 30), end: new Date(2025, 3, 25), description: '' },
-        { title: 'Réunion ok', start: new Date(2026, 4, 23, 21, 30), end: new Date(2025, 4, 23), description: '' },
-        { title: 'Réunion ok', start: new Date(2026, 5, 20, 21, 30), end: new Date(2025, 5, 20), description: '' },
-        { title: 'Soirée festive - Après-midi / soirée', start: new Date(2026, 6, 12, 13, 30), end: new Date(2025, 6, 12), description: '' },
-        { title: 'Réunion J', start: new Date(2026, 6, 18, 21, 30), end: new Date(2025, 6, 18), description: '' },
-        { title: 'Nuit des étoiles', start: new Date(2026, 7, 1, 22, 30), end: new Date(2025, 7, 1), description: '' }
-    ])
+const API_BASE = process.env.REACT_APP_API_URL || "";
 
-    const [selectedYear, setSelectedYear] = useState(2025);
+const Reunions = () => {
+    const [events, setEvents] = useState([...staticMeetings]);
+
+    useEffect(() => {
+        if (!API_BASE) {
+            setEvents([...staticMeetings]);
+            return;
+        }
+        Promise.all([
+            fetch(`${API_BASE}/api/meetings`).then((r) => (r.ok ? r.json() : [])),
+            fetch(`${API_BASE}/api/meetings/hidden-static`).then((r) => (r.ok ? r.json() : [])),
+        ])
+            .then(([data, hiddenIds]) => {
+                const hidden = Array.isArray(hiddenIds) ? hiddenIds : [];
+                const visibleStatic = staticMeetings.filter((m) => !hidden.includes(m.id));
+                const fromApi = Array.isArray(data)
+                    ? data.map((m) => ({
+                          id: m.id,
+                          title: m.title,
+                          description: m.description || "",
+                          start: new Date(m.startDate),
+                          end: new Date(m.endDate),
+                      }))
+                    : [];
+                const merged = [...visibleStatic, ...fromApi].sort((a, b) => a.start - b.start);
+                setEvents(merged);
+            })
+            .catch(() => {
+                setEvents([...staticMeetings]);
+            });
+    }, []);
+
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [overlayVisible, setOverlayVisible] = useState(false);
     const [hoveredEvent, setHoveredEvent] = useState(null);
-    const [displayLimit, setDisplayLimit] = useState(2); // Afficher 2 réunions à venir par défaut
+    const [displayLimit, setDisplayLimit] = useState(2);
     const isInitialized = useRef(false);
 
     useEffect(() => {
-        // Définir l'année actuelle par défaut seulement au premier chargement
         if (!isInitialized.current && events.length > 0) {
             const currentYear = new Date().getFullYear();
             const availableYears = [...new Set(events.map(e => e.start.getFullYear()))].sort();
@@ -50,9 +62,7 @@ const Reunions = () => {
         }
     }, [events]);
 
-    // Réinitialiser la limite d'affichage quand on change d'année
     useEffect(() => {
-        // Toujours revenir à 2 réunions à venir quand on change d'année
         setDisplayLimit(2);
     }, [selectedYear]);
 
@@ -68,15 +78,13 @@ const Reunions = () => {
 
     const filteredEvents = events.filter(event => event.start.getFullYear() === selectedYear);
     const availableYears = [...new Set(events.map(e => e.start.getFullYear()))].sort();
+    const yearsToShow = availableYears.length > 0 ? availableYears : [new Date().getFullYear()];
     
-    // Séparer les événements passés et futurs
     const now = new Date();
     const pastEvents = filteredEvents.filter(e => e.start < now).sort((a, b) => b.start - a.start);
     const upcomingEvents = filteredEvents.filter(e => e.start >= now).sort((a, b) => a.start - b.start);
     
-    // Limiter l'affichage des événements à venir uniquement
     const displayedUpcoming = upcomingEvents.slice(0, displayLimit);
-    // Afficher toutes les réunions passées (pas de limite car elles sont compactes)
     const displayedPast = pastEvents;
     const hasMore = upcomingEvents.length > displayLimit;
 
@@ -91,7 +99,6 @@ const Reunions = () => {
             <Header />
             
             <main className="flex-grow px-6 py-12 font-kodchasan font-medium">
-                {/* Titre principal */}
                 <div className="text-center mb-12 animate-zoom-rotate">
                     <h1 className="text-5xl font-bold mb-4">📅 Réunions & Événements</h1>
                     <p className="text-xl text-gray-300">Découvrez nos prochaines activités astronomiques</p>
@@ -99,9 +106,7 @@ const Reunions = () => {
 
                 <div className="max-w-7xl mx-auto">
                     <div className="grid lg:grid-cols-3 gap-8">
-                        {/* Colonne de gauche - Sélecteur d'année et liste */}
                         <div className="lg:col-span-2 space-y-6">
-                            {/* Sélecteur d'année */}
                             <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 animate-slide-left">
                                 <div className="flex items-center justify-between mb-4">
                                     <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -113,14 +118,13 @@ const Reunions = () => {
                                         value={selectedYear}
                                         onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                                     >
-                                        {availableYears.map((year) => (
+                                        {yearsToShow.map((year) => (
                                             <option key={year} value={year} className="bg-gray-800">{year}</option>
                                         ))}
                                     </select>
                                 </div>
                             </div>
 
-                            {/* Liste des événements */}
                             <div className="space-y-4">
                                 {filteredEvents.length === 0 ? (
                                     <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 text-center animate-fade-scale">
@@ -128,7 +132,6 @@ const Reunions = () => {
                                     </div>
                                 ) : (
                                     <>
-                                        {/* Événements à venir */}
                                         {upcomingEvents.length > 0 && (
                                             <div className="mb-6">
                                                 <h3 className="text-2xl font-bold mb-4 text-green-400">📅 À venir</h3>
@@ -173,7 +176,6 @@ const Reunions = () => {
                                                 </div>
                                             </div>
                                         )}
-                                        {/* Bouton "Voir plus" */}
                                         {hasMore && (
                                             <div className="text-center">
                                                 <button
@@ -185,7 +187,6 @@ const Reunions = () => {
                                             </div>
                                         )}
 
-                                        {/* Bouton "Voir moins" si on a affiché plus que le minimum (2) */}
                                         {displayLimit > 2 && (
                                             <div className="text-center mt-2">
                                                 <button
@@ -197,7 +198,6 @@ const Reunions = () => {
                                             </div>
                                         )}
 
-                                        {/* Événements passés (affichage réduit) */}
                                         {pastEvents.length > 0 && (
                                             <div className="mb-6">
                                                 <h3 className="text-2xl font-bold mb-4 text-gray-400">📜 Passées</h3>
@@ -246,9 +246,7 @@ const Reunions = () => {
                             </div>
                         </div>
 
-                        {/* Colonne de droite - Informations pratiques */}
                         <div className="space-y-6">
-                            {/* Lieux des réunions */}
                             <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 animate-slide-right">
                                 <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
                                     <MapPin className="w-6 h-6" />
@@ -323,7 +321,6 @@ const Reunions = () => {
                                 </div>
                             </div>
 
-                            {/* Message d'invitation */}
                             <div className="bg-gradient-to-br from-blue-500 to-purple-600 bg-opacity-20 backdrop-blur-sm rounded-xl p-6 animate-bounce-in">
                                 <h2 className="text-2xl font-bold mb-3">✨ Rejoignez-nous !</h2>
                                 <p className="text-gray-200">
@@ -335,7 +332,6 @@ const Reunions = () => {
                 </div>
             </main>
 
-            {/* Modal pour les détails */}
             {overlayVisible && selectedEvent && (
                 <div 
                     className="fixed inset-0 bg-black bg-opacity-80 z-50 flex justify-center items-center p-4 animate-fade-scale"
