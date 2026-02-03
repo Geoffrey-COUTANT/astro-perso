@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Upload, Trash2, ArrowLeft, ImagePlus, Sparkles, Calendar, Link2, Mail, Images, RotateCcw, Save, X, Pencil, Plus, GripVertical, LogOut } from "lucide-react";
 import { getStaticImageUrl } from "./data/galleryStaticImages";

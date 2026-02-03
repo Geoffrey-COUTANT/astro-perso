@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Footer from "./components/Footer/Footer";
 import Header from "./components/Header/Header";
 import moment from 'moment';

@@ -1,7 +1,7 @@
-import React, { useRef, useState, useEffect, Suspense } from 'react';
+import { useRef, useState, useEffect, Suspense } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Stars, useTexture } from '@react-three/drei';
-import * as THREE from 'three';
+import { MathUtils, Color } from 'three';
 
 const ROTATION_SPEED = 0.005;
 const MAX_POLAR = Math.PI / 2 - 0.2;
@@ -90,8 +90,8 @@ function EarthPlanet() {
                 <meshPhongMaterial
                     map={earthTexture}
                     shininess={100}
-                    specular={new THREE.Color(0x666666)}
-                    emissive={new THREE.Color(0x000000)}
+                    specular={new Color(0x666666)}
+                    emissive={new Color(0x000000)}
                     emissiveIntensity={0.1}
                 />
             </mesh>
