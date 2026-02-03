@@ -114,10 +114,31 @@ app.Use(async (context, next) =>
     await next();
 });
 
-using (var scope = app.Services.CreateScope())
+// Appliquer les migrations au démarrage (avec retry si Postgres n'est pas encore prêt)
 {
-    var db = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext();
-    db.Database.Migrate();
+    const int maxAttempts = 10;
+    const int delayMs = 2000;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++)
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext();
+            db.Database.Migrate();
+            Console.WriteLine("[Startup] Migrations appliquées avec succès.");
+            break;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Startup] Tentative {attempt}/{maxAttempts} - Migration échouée: {ex.Message}");
+            if (attempt == maxAttempts)
+            {
+                Console.WriteLine("[Startup] Échec après " + maxAttempts + " tentatives. Arrêt de l'application.");
+                throw;
+            }
+            Thread.Sleep(delayMs);
+        }
+    }
 }
 
 app.Use(async (context, next) =>
