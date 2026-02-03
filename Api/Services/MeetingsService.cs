@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Api.Services;
 
+public record MeetingItemDto(string Id, string Title, string Description, DateTime StartDate, DateTime EndDate);
+
 public class MeetingsService
 {
     private readonly IDbContextFactory<AppDbContext> _dbFactory;
@@ -13,21 +15,14 @@ public class MeetingsService
         _dbFactory = dbFactory;
     }
 
-    public List<Meeting> GetAll()
+    public List<MeetingItemDto> GetAll()
     {
         using var db = _dbFactory.CreateDbContext();
-        return db.Meetings
-            .OrderBy(x => x.StartDate)
-            .Select(x => new Meeting
-            {
-                Id = x.Id,
-                Title = x.Title,
-                Description = x.Description,
-                StartDate = x.StartDate,
-                EndDate = x.EndDate,
-                CreatedAt = x.CreatedAt
-            })
-            .ToList();
+        EnsureSeedStaticMeetings(db);
+        var hidden = new HashSet<string>(db.MeetingHiddenStatic.Select(x => x.StaticId));
+        var fromDb = db.Meetings.OrderBy(x => x.StartDate).Select(x => new MeetingItemDto(x.Id.ToString(), x.Title, x.Description ?? "", x.StartDate, x.EndDate)).ToList();
+        var fromStatic = db.StaticMeetings.Where(s => !hidden.Contains(s.Id)).Select(x => new MeetingItemDto(x.Id, x.Title, x.Description ?? "", x.StartDate, x.EndDate)).ToList();
+        return fromDb.Concat(fromStatic).OrderBy(x => x.StartDate).ToList();
     }
 
     public Meeting? GetById(Guid id)
@@ -77,6 +72,13 @@ public class MeetingsService
         return true;
     }
 
+    public List<MeetingItemDto> GetAllStatic()
+    {
+        using var db = _dbFactory.CreateDbContext();
+        EnsureSeedStaticMeetings(db);
+        return db.StaticMeetings.OrderBy(x => x.StartDate).Select(x => new MeetingItemDto(x.Id, x.Title, x.Description ?? "", x.StartDate, x.EndDate)).ToList();
+    }
+
     public List<string> GetHiddenStaticIds()
     {
         using var db = _dbFactory.CreateDbContext();
@@ -113,5 +115,34 @@ public class MeetingsService
             EndDate = e.EndDate,
             CreatedAt = e.CreatedAt
         };
+    }
+
+    private static void EnsureSeedStaticMeetings(AppDbContext db)
+    {
+        if (db.StaticMeetings.Any()) return;
+        var items = new[]
+        {
+            (Id: "static-1", Title: "Assemblée Générale", Start: new DateTime(2026, 1, 23, 20, 30, 0, DateTimeKind.Utc), End: new DateTime(2026, 1, 23, 22, 30, 0, DateTimeKind.Utc), Desc: ""),
+            (Id: "static-2", Title: "Réunion de fin d'année", Start: new DateTime(2025, 12, 19, 20, 30, 0, DateTimeKind.Utc), End: new DateTime(2025, 12, 19, 22, 30, 0, DateTimeKind.Utc), Desc: "compte rendu de la dernière réunion de l'année"),
+            (Id: "static-3", Title: "Réunion A", Start: new DateTime(2025, 2, 21, 21, 0, 0, DateTimeKind.Utc), End: new DateTime(2025, 2, 21, 23, 0, 0, DateTimeKind.Utc), Desc: "Résumé de la réunion A"),
+            (Id: "static-4", Title: "Réunion B", Start: new DateTime(2025, 3, 28, 21, 0, 0, DateTimeKind.Utc), End: new DateTime(2025, 3, 28, 23, 0, 0, DateTimeKind.Utc), Desc: "Résumé de la réunion B"),
+            (Id: "static-5", Title: "Réunion C", Start: new DateTime(2025, 4, 25, 21, 30, 0, DateTimeKind.Utc), End: new DateTime(2025, 4, 25, 23, 30, 0, DateTimeKind.Utc), Desc: "Résumé de la réunion C"),
+            (Id: "static-6", Title: "Réunion D", Start: new DateTime(2025, 5, 23, 21, 30, 0, DateTimeKind.Utc), End: new DateTime(2025, 5, 23, 23, 30, 0, DateTimeKind.Utc), Desc: "Résumé de la réunion D"),
+            (Id: "static-7", Title: "Réunion E", Start: new DateTime(2025, 6, 20, 21, 30, 0, DateTimeKind.Utc), End: new DateTime(2025, 6, 20, 23, 30, 0, DateTimeKind.Utc), Desc: "Résumé de la réunion E"),
+            (Id: "static-8", Title: "Soirée festive - Après-midi / soirée", Start: new DateTime(2025, 7, 12, 13, 30, 0, DateTimeKind.Utc), End: new DateTime(2025, 7, 12, 23, 30, 0, DateTimeKind.Utc), Desc: "Résumé de la soirée festive"),
+            (Id: "static-9", Title: "Réunion F", Start: new DateTime(2025, 7, 18, 21, 30, 0, DateTimeKind.Utc), End: new DateTime(2025, 7, 18, 23, 30, 0, DateTimeKind.Utc), Desc: "Résumé de la réunion F"),
+            (Id: "static-10", Title: "Nuit des étoiles", Start: new DateTime(2025, 8, 1, 22, 30, 0, DateTimeKind.Utc), End: new DateTime(2025, 8, 2, 0, 30, 0, DateTimeKind.Utc), Desc: "Résumé de la nuit étoilée"),
+            (Id: "static-11", Title: "Réunion ok", Start: new DateTime(2026, 2, 21, 21, 0, 0, DateTimeKind.Utc), End: new DateTime(2026, 2, 21, 23, 0, 0, DateTimeKind.Utc), Desc: ""),
+            (Id: "static-12", Title: "Réunion ok", Start: new DateTime(2026, 3, 28, 21, 0, 0, DateTimeKind.Utc), End: new DateTime(2026, 3, 28, 23, 0, 0, DateTimeKind.Utc), Desc: ""),
+            (Id: "static-13", Title: "Réunion ok", Start: new DateTime(2026, 4, 25, 21, 30, 0, DateTimeKind.Utc), End: new DateTime(2026, 4, 25, 23, 30, 0, DateTimeKind.Utc), Desc: ""),
+            (Id: "static-14", Title: "Réunion ok", Start: new DateTime(2026, 5, 23, 21, 30, 0, DateTimeKind.Utc), End: new DateTime(2026, 5, 23, 23, 30, 0, DateTimeKind.Utc), Desc: ""),
+            (Id: "static-15", Title: "Réunion ok", Start: new DateTime(2026, 6, 20, 21, 30, 0, DateTimeKind.Utc), End: new DateTime(2026, 6, 20, 23, 30, 0, DateTimeKind.Utc), Desc: ""),
+            (Id: "static-16", Title: "Soirée festive - Après-midi / soirée", Start: new DateTime(2026, 7, 12, 13, 30, 0, DateTimeKind.Utc), End: new DateTime(2026, 7, 12, 23, 30, 0, DateTimeKind.Utc), Desc: ""),
+            (Id: "static-17", Title: "Réunion J", Start: new DateTime(2026, 7, 18, 21, 30, 0, DateTimeKind.Utc), End: new DateTime(2026, 7, 18, 23, 30, 0, DateTimeKind.Utc), Desc: ""),
+            (Id: "static-18", Title: "Nuit des étoiles", Start: new DateTime(2026, 8, 1, 22, 30, 0, DateTimeKind.Utc), End: new DateTime(2026, 8, 2, 0, 30, 0, DateTimeKind.Utc), Desc: ""),
+        };
+        foreach (var (Id, Title, Start, End, Desc) in items)
+            db.StaticMeetings.Add(new StaticMeetingEntity { Id = Id, Title = Title, Description = Desc, StartDate = Start, EndDate = End });
+        db.SaveChanges();
     }
 }

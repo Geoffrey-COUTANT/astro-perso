@@ -4,28 +4,19 @@ import Header from "./components/Header/Header";
 import moment from 'moment';
 import 'moment/locale/fr';
 import { Calendar, MapPin, Clock, Info } from "lucide-react";
-import { staticMeetings } from "./data/staticMeetings";
-
 moment.locale('fr');
 
 const API_BASE = process.env.REACT_APP_API_URL || "";
 
 const Reunions = () => {
-    const [events, setEvents] = useState([...staticMeetings]);
+    const [events, setEvents] = useState([]);
 
     useEffect(() => {
-        if (!API_BASE) {
-            setEvents([...staticMeetings]);
-            return;
-        }
-        Promise.all([
-            fetch(`${API_BASE}/api/meetings`).then((r) => (r.ok ? r.json() : [])),
-            fetch(`${API_BASE}/api/meetings/hidden-static`).then((r) => (r.ok ? r.json() : [])),
-        ])
-            .then(([data, hiddenIds]) => {
-                const hidden = Array.isArray(hiddenIds) ? hiddenIds : [];
-                const visibleStatic = staticMeetings.filter((m) => !hidden.includes(m.id));
-                const fromApi = Array.isArray(data)
+        if (!API_BASE) return;
+        fetch(`${API_BASE}/api/meetings`)
+            .then((r) => (r.ok ? r.json() : []))
+            .then((data) => {
+                const list = Array.isArray(data)
                     ? data.map((m) => ({
                           id: m.id,
                           title: m.title,
@@ -34,12 +25,9 @@ const Reunions = () => {
                           end: new Date(m.endDate),
                       }))
                     : [];
-                const merged = [...visibleStatic, ...fromApi].sort((a, b) => a.start - b.start);
-                setEvents(merged);
+                setEvents(list.sort((a, b) => a.start - b.start));
             })
-            .catch(() => {
-                setEvents([...staticMeetings]);
-            });
+            .catch(() => setEvents([]));
     }, []);
 
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());

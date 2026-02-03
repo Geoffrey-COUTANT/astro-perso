@@ -7,6 +7,7 @@ namespace Api.Services;
 
 public class GalleryService
 {
+    private const int MaxUploadBytes = 10 * 1024 * 1024; // 10 Mo — évite grosses allocations RAM
     private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private static readonly JsonSerializerOptions JsonOptions = new();
 
@@ -43,6 +44,7 @@ public class GalleryService
     public async Task<GalleryImage?> AddAsync(IFormFile file, string? title = null, CancellationToken ct = default)
     {
         if (file.Length == 0) return null;
+        if (file.Length > MaxUploadBytes) return null; // limite RAM
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         var allowed = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg" };
         if (!allowed.Contains(ext)) return null;
@@ -50,7 +52,7 @@ public class GalleryService
         using var db = _dbFactory.CreateDbContext();
         var id = Guid.NewGuid();
         byte[] content;
-        await using (var stream = new MemoryStream())
+        await using (var stream = new MemoryStream((int)Math.Min(file.Length, MaxUploadBytes)))
         {
             await file.CopyToAsync(stream, ct);
             content = stream.ToArray();
@@ -144,9 +146,28 @@ public class GalleryService
     public (byte[]? Content, string? ContentType)? GetFileContent(Guid id)
     {
         using var db = _dbFactory.CreateDbContext();
-        var e = db.GalleryImages.AsNoTracking().FirstOrDefault(x => x.Id == id);
-        if (e?.FileContent == null) return null;
-        return (e.FileContent, e.ContentType ?? "application/octet-stream");
+        var row = db.GalleryImages.AsNoTracking()
+            .Where(x => x.Id == id)
+            .Select(x => new { x.FileContent, x.ContentType })
+            .FirstOrDefault();
+        if (row?.FileContent == null) return null;
+        return (row.FileContent, row.ContentType ?? "application/octet-stream");
+    }
+
+    public List<(string Id, string Title, string? Url)> GetStaticGalleryList()
+    {
+        using var db = _dbFactory.CreateDbContext();
+        EnsureSeedStaticGalleryMeta(db);
+        return db.StaticGalleryMeta.OrderBy(x => x.DisplayOrder).Select(x => (x.Id, x.Title, x.Url)).ToList();
+    }
+
+    private static void EnsureSeedStaticGalleryMeta(AppDbContext db)
+    {
+        if (db.StaticGalleryMeta.Any()) return;
+        var imageNumbers = new[] { 14, 15, 16, 17, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47 };
+        for (var i = 0; i < imageNumbers.Length; i++)
+            db.StaticGalleryMeta.Add(new StaticGalleryMetaEntity { Id = $"static-{i}", Title = $"Image {imageNumbers[i]}", Url = null, DisplayOrder = i });
+        db.SaveChanges();
     }
 
     private List<string> GetSettingList(string key)

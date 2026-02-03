@@ -1,13 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Upload, Trash2, ArrowLeft, ImagePlus, Sparkles, Calendar, Link2, Mail, Images, RotateCcw, Save, X, Pencil, Plus, GripVertical, LogOut } from "lucide-react";
-import { getStaticGalleryList } from "./data/galleryStaticImages";
-import { staticMeetings } from "./data/staticMeetings";
+import { getStaticImageUrl } from "./data/galleryStaticImages";
 import { ADMIN_TOKEN_KEY } from "./AdminLogin";
 
 const API_BASE = process.env.REACT_APP_API_URL || "";
-
-const allStaticImages = getStaticGalleryList();
 
 const ADMIN_SECTIONS = [
     { id: "reunions", label: "Réunions", icon: Calendar, path: "/reunions" },
@@ -34,8 +31,10 @@ function Admin() {
     const [selectedForDeletion, setSelectedForDeletion] = useState(new Set());
     const [unifiedImages, setUnifiedImages] = useState([]);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [galleryStaticListFromApi, setGalleryStaticListFromApi] = useState([]);
 
     const [meetings, setMeetings] = useState([]);
+    const [staticMeetingsFromApi, setStaticMeetingsFromApi] = useState([]);
     const [hiddenStaticMeetingIds, setHiddenStaticMeetingIds] = useState([]);
     const [meetingsLoading, setMeetingsLoading] = useState(false);
     const [editingMeetingId, setEditingMeetingId] = useState(null);
@@ -75,11 +74,13 @@ function Admin() {
         setLoading(true);
         Promise.all([
             fetch(`${API_BASE}/api/gallery`).then((r) => (r.ok ? r.json() : [])),
+            fetch(`${API_BASE}/api/gallery/static-list`).then((r) => (r.ok ? r.json() : [])),
             fetch(`${API_BASE}/api/gallery/hidden-static`).then((r) => (r.ok ? r.json() : [])),
             fetch(`${API_BASE}/api/gallery/unified-order`).then((r) => (r.ok ? r.json() : [])),
         ])
-            .then(([apiData, hiddenData, orderData]) => {
+            .then(([apiData, staticListData, hiddenData, orderData]) => {
                 setImages(Array.isArray(apiData) ? apiData : []);
+                setGalleryStaticListFromApi(Array.isArray(staticListData) ? staticListData : []);
                 setHiddenStaticIds(Array.isArray(hiddenData) ? hiddenData : []);
                 setUnifiedOrder(Array.isArray(orderData) ? orderData : []);
                 setHasUnsavedChanges(false);
@@ -87,12 +88,22 @@ function Admin() {
             })
             .catch(() => {
                 setImages([]);
+                setGalleryStaticListFromApi([]);
                 setHiddenStaticIds([]);
                 setUnifiedOrder([]);
             })
             .finally(() => setLoading(false));
     };
 
+    const allStaticImages = useMemo(
+        () =>
+            galleryStaticListFromApi.map((item) => ({
+                id: item.id,
+                title: item.title || "",
+                url: item.url || getStaticImageUrl(item.id),
+            })),
+        [galleryStaticListFromApi]
+    );
     const visibleStaticImages = allStaticImages.filter((img) => !hiddenStaticIds.includes(img.id));
     const hiddenStaticImages = allStaticImages.filter((img) => hiddenStaticIds.includes(img.id));
 
@@ -113,14 +124,17 @@ function Admin() {
         setMeetingsLoading(true);
         Promise.all([
             fetch(`${API_BASE}/api/meetings`).then((r) => (r.ok ? r.json() : [])),
+            fetch(`${API_BASE}/api/meetings/static`).then((r) => (r.ok ? r.json() : [])),
             fetch(`${API_BASE}/api/meetings/hidden-static`).then((r) => (r.ok ? r.json() : [])),
         ])
-            .then(([data, hiddenIds]) => {
+            .then(([data, staticList, hiddenIds]) => {
                 setMeetings(Array.isArray(data) ? data : []);
+                setStaticMeetingsFromApi(Array.isArray(staticList) ? staticList : []);
                 setHiddenStaticMeetingIds(Array.isArray(hiddenIds) ? hiddenIds : []);
             })
             .catch(() => {
                 setMeetings([]);
+                setStaticMeetingsFromApi([]);
                 setHiddenStaticMeetingIds([]);
             })
             .finally(() => setMeetingsLoading(false));
@@ -197,29 +211,16 @@ function Admin() {
             .finally(() => setContactSaving(false));
     };
 
-    const visibleStaticMeetings = useMemo(
-        () => staticMeetings.filter((m) => !hiddenStaticMeetingIds.includes(m.id)),
-        [hiddenStaticMeetingIds]
-    );
     const unifiedMeetings = useMemo(() => {
-        const staticItems = visibleStaticMeetings.map((m) => ({
-            id: m.id,
-            title: m.title,
-            description: m.description,
-            startDate: m.start,
-            endDate: m.end,
-            isStatic: true,
-        }));
-        const apiItems = meetings.map((m) => ({
+        return meetings.map((m) => ({
             id: m.id,
             title: m.title,
             description: m.description ?? "",
             startDate: new Date(m.startDate),
             endDate: new Date(m.endDate),
-            isStatic: false,
-        }));
-        return [...staticItems, ...apiItems].sort((a, b) => a.startDate - b.startDate);
-    }, [visibleStaticMeetings, meetings]);
+            isStatic: String(m.id).startsWith("static-"),
+        })).sort((a, b) => a.startDate - b.startDate);
+    }, [meetings]);
 
     useEffect(() => {
         if (!loading) {
@@ -973,13 +974,13 @@ function Admin() {
                                     <h3 className="text-lg font-bold text-amber-200 mb-3">Réunions statiques masquées ({hiddenStaticMeetingIds.length})</h3>
                                     <p className="text-sm text-gray-400 mb-3">Ces réunions « en dur » ont été masquées. Vous pouvez les réafficher sur le site.</p>
                                     <div className="space-y-2">
-                                        {staticMeetings
+                                        {staticMeetingsFromApi
                                             .filter((m) => hiddenStaticMeetingIds.includes(m.id))
                                             .map((m) => (
                                                 <div key={m.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
                                                     <span className="font-medium text-white truncate">{m.title}</span>
                                                     <span className="text-sm text-gray-400 shrink-0">
-                                                        {m.start.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                                                        {new Date(m.startDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
                                                     </span>
                                                     <button
                                                         type="button"

@@ -3,7 +3,7 @@ import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { allImages, imageNumbers } from "./data/galleryStaticImages";
+import { getStaticImageUrl } from "./data/galleryStaticImages";
 
 const API_BASE = process.env.REACT_APP_API_URL || "";
 
@@ -16,20 +16,24 @@ function Galerie() {
     const [hiddenStaticIds, setHiddenStaticIds] = useState([]);
     const [unifiedOrder, setUnifiedOrder] = useState([]);
 
+    const [staticListFromApi, setStaticListFromApi] = useState([]);
+
     useEffect(() => {
         if (!API_BASE) return;
         Promise.all([
             fetch(`${API_BASE}/api/gallery`).then((r) => (r.ok ? r.json() : [])),
+            fetch(`${API_BASE}/api/gallery/static-list`).then((r) => (r.ok ? r.json() : [])),
             fetch(`${API_BASE}/api/gallery/hidden-static`).then((r) => (r.ok ? r.json() : [])),
             fetch(`${API_BASE}/api/gallery/unified-order`).then((r) => (r.ok ? r.json() : [])),
         ])
-            .then(([apiData, hiddenData, orderData]) => {
+            .then(([apiData, staticData, hiddenData, orderData]) => {
                 setApiImages(Array.isArray(apiData) ? apiData.map((img, idx) => ({
                     id: String(img.id),
                     title: img.title || `Image ${idx + 1}`,
                     description: img.description || "Photo d'astronomie du Club Astro Véga de la Lyre",
                     url: img.url?.startsWith("http") ? img.url : `${API_BASE}${img.url}`,
                 })) : []);
+                setStaticListFromApi(Array.isArray(staticData) ? staticData : []);
                 setHiddenStaticIds(Array.isArray(hiddenData) ? hiddenData : []);
                 setUnifiedOrder(Array.isArray(orderData) ? orderData : []);
             })
@@ -38,13 +42,13 @@ function Galerie() {
 
     const staticImages = useMemo(
         () =>
-            allImages.map((url, idx) => ({
-                id: `static-${idx}`,
-                title: `Image ${imageNumbers[idx] ?? idx + 1}`,
+            staticListFromApi.map((item, idx) => ({
+                id: item.id,
+                title: item.title || `Image ${idx + 1}`,
                 description: "Photo d'astronomie du Club Astro Véga de la Lyre",
-                url,
+                url: item.url || getStaticImageUrl(item.id),
             })),
-        []
+        [staticListFromApi]
     );
 
     const visibleStatic = useMemo(

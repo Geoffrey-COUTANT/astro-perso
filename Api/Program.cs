@@ -3,6 +3,7 @@ using Api.Data;
 using Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +46,12 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
     options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
 });
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "API Club Astro Véga", Version = "v1" });
+});
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -68,6 +75,9 @@ var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrEmpty(port))
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
+// Limite taille body (ex. upload galerie 10 Mo) — évite grosses allocations RAM
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 10 * 1024 * 1024);
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -86,6 +96,8 @@ app.Use(async (context, next) =>
 });
 
 app.UseCors();
+app.UseSwagger();
+app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "API Club Astro Véga v1"));
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
@@ -197,6 +209,12 @@ app.MapPatch("/api/gallery/reorder", (ReorderRequest? body, HttpRequest request,
     return Results.NoContent();
 });
 
+app.MapGet("/api/gallery/static-list", (GalleryService gallery) =>
+{
+    var list = gallery.GetStaticGalleryList();
+    return Results.Ok(list.Select(x => new { id = x.Id, title = x.Title, url = x.Url }));
+});
+
 app.MapGet("/api/gallery/unified-order", (GalleryService gallery) =>
 {
     var order = gallery.GetUnifiedOrder();
@@ -216,14 +234,13 @@ app.MapPatch("/api/gallery/unified-order", (UnifiedOrderRequest? body, HttpReque
 app.MapGet("/api/meetings", (MeetingsService meetings) =>
 {
     var list = meetings.GetAll();
-    return Results.Ok(list.Select(m => new
-    {
-        id = m.Id,
-        title = m.Title,
-        description = m.Description,
-        startDate = m.StartDate,
-        endDate = m.EndDate
-    }));
+    return Results.Ok(list.Select(m => new { id = m.Id, title = m.Title, description = m.Description, startDate = m.StartDate, endDate = m.EndDate }));
+});
+
+app.MapGet("/api/meetings/static", (MeetingsService meetings) =>
+{
+    var list = meetings.GetAllStatic();
+    return Results.Ok(list.Select(m => new { id = m.Id, title = m.Title, description = m.Description, startDate = m.StartDate, endDate = m.EndDate }));
 });
 
 app.MapPost("/api/meetings", (MeetingCreateRequest? body, HttpRequest request, MeetingsService meetings) =>

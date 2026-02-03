@@ -38,12 +38,10 @@ export const allImages = [
     image46, image47
 ];
 
-export const imageNumbers = [14, 15, 16, 17, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47];
-
-export function getStaticGalleryList() {
-    return allImages.map((url, idx) => ({
-        id: `static-${idx}`,
-        title: `Image ${imageNumbers[idx] ?? idx + 1}`,
-        url,
-    }));
+/** Retourne l’URL (bundle) pour une image statique à partir de son id (ex. "static-0"). */
+export function getStaticImageUrl(staticId) {
+    if (!staticId || typeof staticId !== "string") return undefined;
+    const idx = parseInt(staticId.replace(/^static-/, ""), 10);
+    if (Number.isNaN(idx) || idx < 0 || idx >= allImages.length) return undefined;
+    return allImages[idx];
 }

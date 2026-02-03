@@ -10,6 +10,8 @@ public class AppDbContext : DbContext
     public DbSet<GallerySettingEntity> GallerySettings => Set<GallerySettingEntity>();
     public DbSet<MeetingEntity> Meetings => Set<MeetingEntity>();
     public DbSet<MeetingHiddenStaticEntity> MeetingHiddenStatic => Set<MeetingHiddenStaticEntity>();
+    public DbSet<StaticMeetingEntity> StaticMeetings => Set<StaticMeetingEntity>();
+    public DbSet<StaticGalleryMetaEntity> StaticGalleryMeta => Set<StaticGalleryMetaEntity>();
     public DbSet<ContactInfoEntity> ContactInfo => Set<ContactInfoEntity>();
     public DbSet<LinkCategoryEntity> LinkCategories => Set<LinkCategoryEntity>();
     public DbSet<LinkItemEntity> LinkItems => Set<LinkItemEntity>();
@@ -46,6 +48,24 @@ public class AppDbContext : DbContext
             e.ToTable("meeting_hidden_static");
             e.HasKey(x => x.Id);
             e.Property(x => x.StaticId).HasMaxLength(128);
+        });
+
+        modelBuilder.Entity<StaticMeetingEntity>(e =>
+        {
+            e.ToTable("static_meetings");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasMaxLength(64);
+            e.Property(x => x.Title).HasMaxLength(500);
+            e.Property(x => x.Description).HasMaxLength(4000);
+        });
+
+        modelBuilder.Entity<StaticGalleryMetaEntity>(e =>
+        {
+            e.ToTable("static_gallery_meta");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasMaxLength(64);
+            e.Property(x => x.Title).HasMaxLength(500);
+            e.Property(x => x.Url).HasMaxLength(2000);
         });
 
         modelBuilder.Entity<ContactInfoEntity>(e =>
