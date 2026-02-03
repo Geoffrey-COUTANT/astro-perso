@@ -1,4 +1,9 @@
 {
+  "build": {
+    "env": {
+      "GENERATE_SOURCEMAP": "false"
+    }
+  },
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
     { "source": "/meteo", "destination": "/index.html" },

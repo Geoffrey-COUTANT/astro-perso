@@ -22,7 +22,6 @@
     "react-router-dom": "^7.4.0",
     "react-scripts": "5.0.1",
     "three": "^0.174.0",
-    "untitled": "file:",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
