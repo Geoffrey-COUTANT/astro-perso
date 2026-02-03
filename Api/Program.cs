@@ -50,6 +50,17 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "API Club Astro Véga", Version = "v1" });
+    c.AddSecurityDefinition("AdminKey", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Name = "X-Admin-Key",
+        Description = "Clé admin (même valeur que Admin__ApiKey sur Railway). Requise pour POST/PUT/PATCH/DELETE."
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "AdminKey" } }, Array.Empty<string>() }
+    });
 });
 
 builder.Services.AddCors(options =>
