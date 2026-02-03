@@ -48,7 +48,7 @@ public class MeetingsService
         return ToModel(entity);
     }
 
-    public bool Update(Guid id, string title, string description, DateTime startDate, DateTime endDate)
+    public bool Update(int id, string title, string description, DateTime startDate, DateTime endDate)
     {
         using var db = _dbFactory.CreateDbContext();
         var meeting = db.Meetings.Find(id);
