@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import React, { useLayoutEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import Home from './Home';
 import Meteo from './Meteo';
 import Reunions from "./Reunions";
@@ -9,6 +9,20 @@ import LiensUtiles from './LiensUtiles';
 import Galerie from './Galerie';
 import Admin from './Admin';
 import AdminLogin, { ADMIN_TOKEN_KEY } from './AdminLogin';
+
+if (typeof window !== 'undefined') {
+  window.history.scrollRestoration = 'manual';
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [pathname]);
+  return null;
+}
 
 function NotFound404() {
   return (
@@ -21,14 +35,19 @@ function NotFound404() {
 }
 
 function AdminGuard({ children }) {
+  const navigate = useNavigate();
   const token = sessionStorage.getItem(ADMIN_TOKEN_KEY);
-  if (!token) return <NotFound404 />;
+  useLayoutEffect(() => {
+    if (!token) navigate('/admin/connect', { replace: true });
+  }, [token, navigate]);
+  if (!token) return null;
   return children;
 }
 
 function App() {
   return (
       <Router>
+          <ScrollToTop />
           <Routes>
               <Route path={'/'} element={<Home />} />
               <Route path={'/meteo'} element={<Meteo />} />
