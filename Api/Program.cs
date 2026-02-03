@@ -14,6 +14,9 @@ var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
     ?? builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrEmpty(connectionString))
     throw new InvalidOperationException("Configurez DATABASE_URL (Railway) ou ConnectionStrings:DefaultConnection (local).");
+if (connectionString.Contains("${{") || connectionString.Contains("}}"))
+    throw new InvalidOperationException(
+        "DATABASE_URL contient une référence non résolue (${{...}}). Sur Railway, colle la vraie valeur de DATABASE_URL (depuis le service Postgres → Variables), pas la référence.");
 
 builder.Services.AddDbContextFactory<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
