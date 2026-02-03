@@ -10,13 +10,34 @@ var loginAttempts = new ConcurrentDictionary<string, List<DateTime>>();
 const int LoginMaxAttempts = 5;
 const int LoginWindowMinutes = 15;
 
-var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+var rawConnectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
     ?? builder.Configuration.GetConnectionString("DefaultConnection");
-if (string.IsNullOrEmpty(connectionString))
+if (string.IsNullOrWhiteSpace(rawConnectionString))
     throw new InvalidOperationException("Configurez DATABASE_URL (Railway) ou ConnectionStrings:DefaultConnection (local).");
-if (connectionString.Contains("${{") || connectionString.Contains("}}"))
+if (rawConnectionString.Contains("${{") || rawConnectionString.Contains("}}"))
     throw new InvalidOperationException(
         "DATABASE_URL contient une référence non résolue (${{...}}). Sur Railway, colle la vraie valeur de DATABASE_URL (depuis le service Postgres → Variables), pas la référence.");
+
+var connectionString = rawConnectionString.Trim().TrimStart('\uFEFF');
+if (connectionString.Length >= 2 && connectionString[0] == '"' && connectionString[connectionString.Length - 1] == '"')
+    connectionString = connectionString.Substring(1, connectionString.Length - 2);
+if (connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase))
+    connectionString = "postgresql://" + connectionString.Substring(11);
+
+if (connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+{
+    try
+    {
+        var uri = new Uri(connectionString);
+        var userInfo = uri.UserInfo?.Split(':', 2) ?? Array.Empty<string>();
+        var user = userInfo.Length > 0 ? userInfo[0] : "";
+        var pass = userInfo.Length > 1 ? userInfo[1] : "";
+        var db = uri.AbsolutePath.TrimStart('/');
+        if (string.IsNullOrEmpty(db)) db = "railway";
+        connectionString = $"Host={uri.Host};Port={uri.Port};Username={Uri.UnescapeDataString(user)};Password={Uri.UnescapeDataString(pass)};Database={Uri.UnescapeDataString(db)};SSL Mode=Prefer;Trust Server Certificate=true";
+    }
+    catch { }
+}
 
 builder.Services.AddDbContextFactory<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
