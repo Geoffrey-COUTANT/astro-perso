@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import Header from "./components/Header/Header";
 import { Link, useNavigate } from "react-router-dom";
 import { Upload, Trash2, ArrowLeft, ImagePlus, Sparkles, Calendar, Link2, Mail, Images, RotateCcw, Save, X, Pencil, Plus, GripVertical, LogOut } from "lucide-react";
 import { getStaticGalleryList } from "./data/galleryStaticImages";
@@ -571,7 +570,6 @@ function Admin() {
 
     return (
         <div className="min-h-screen text-white relative overflow-hidden flex flex-col font-kodchasan">
-            <Header />
             <div
                 className="fixed inset-0 -z-10"
                 style={{
@@ -587,7 +585,7 @@ function Admin() {
             />
 
             <div className="flex flex-1 min-h-0">
-            <aside className="w-56 sm:w-64 flex-shrink-0 border-r border-white/10 bg-black/20 backdrop-blur-sm flex flex-col pt-6 pb-6 px-3">
+            <aside className="fixed left-0 top-0 bottom-0 w-56 sm:w-64 z-20 border-r border-white/10 bg-black/40 backdrop-blur-md flex flex-col pt-6 pb-6 px-3">
                 <Link
                     to="/"
                     className="inline-flex items-center gap-2 text-cyan-300/90 hover:text-cyan-200 transition mb-6 group px-2"
@@ -622,7 +620,7 @@ function Admin() {
                 </button>
             </aside>
 
-            <main ref={mainContentRef} className="flex-1 overflow-auto max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14 w-full">
+            <main ref={mainContentRef} className="flex-1 overflow-auto max-w-4xl ml-56 sm:ml-64 px-4 sm:px-6 py-10 sm:py-14 w-full min-h-screen">
                 {activeSection === "galerie" && (
                     <>
                 <div className="mb-10">
