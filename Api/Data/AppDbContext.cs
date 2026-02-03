@@ -39,6 +39,7 @@ public class AppDbContext : DbContext
         {
             e.ToTable("meetings");
             e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedOnAdd();
             e.Property(x => x.Title).HasMaxLength(500);
             e.Property(x => x.Description).HasMaxLength(4000);
         });

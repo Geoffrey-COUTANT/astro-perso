@@ -25,7 +25,7 @@ public class MeetingsService
         return fromDb.Concat(fromStatic).OrderBy(x => x.StartDate).ToList();
     }
 
-    public Meeting? GetById(Guid id)
+    public Meeting? GetById(int id)
     {
         using var db = _dbFactory.CreateDbContext();
         var e = db.Meetings.Find(id);
@@ -37,7 +37,6 @@ public class MeetingsService
         using var db = _dbFactory.CreateDbContext();
         var entity = new MeetingEntity
         {
-            Id = Guid.NewGuid(),
             Title = title,
             Description = description ?? "",
             StartDate = startDate,
@@ -62,7 +61,7 @@ public class MeetingsService
         return true;
     }
 
-    public bool Delete(Guid id)
+    public bool Delete(int id)
     {
         using var db = _dbFactory.CreateDbContext();
         var meeting = db.Meetings.Find(id);

@@ -326,7 +326,7 @@ app.MapPost("/api/meetings", (MeetingCreateRequest? body, HttpRequest request, M
     });
 });
 
-app.MapPut("/api/meetings/{id:guid}", (Guid id, MeetingUpdateRequest? body, HttpRequest request, MeetingsService meetings) =>
+app.MapPut("/api/meetings/{id:int}", (int id, MeetingUpdateRequest? body, HttpRequest request, MeetingsService meetings) =>
 {
     if (!IsAdmin(request))
         return Results.Unauthorized();
@@ -339,7 +339,7 @@ app.MapPut("/api/meetings/{id:guid}", (Guid id, MeetingUpdateRequest? body, Http
     return Results.NoContent();
 });
 
-app.MapDelete("/api/meetings/{id:guid}", (Guid id, HttpRequest request, MeetingsService meetings) =>
+app.MapDelete("/api/meetings/{id:int}", (int id, HttpRequest request, MeetingsService meetings) =>
 {
     if (!IsAdmin(request))
         return Results.Unauthorized();
