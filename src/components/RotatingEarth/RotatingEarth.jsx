@@ -37,7 +37,7 @@ function EarthPlanet() {
             const dx = e.clientX - lastPointer.current.x;
             const dy = e.clientY - lastPointer.current.y;
             earthRef.current.rotation.y += dx * ROTATION_SPEED;
-            earthRef.current.rotation.x = THREE.MathUtils.clamp(
+            earthRef.current.rotation.x = MathUtils.clamp(
                 earthRef.current.rotation.x + dy * ROTATION_SPEED,
                 -MAX_POLAR,
                 MAX_POLAR
