@@ -56,11 +56,14 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:3000",
-                "http://127.0.0.1:3000",
-                "https://astro-perso.vercel.app"
-            )
+        policy.SetIsOriginAllowed(origin =>
+            {
+                if (string.IsNullOrEmpty(origin)) return false;
+                var uri = new Uri(origin);
+                if (uri.Host == "localhost" || uri.Host == "127.0.0.1") return true;
+                if (uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)) return true;
+                return uri.Host == "astro-perso.vercel.app";
+            })
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
