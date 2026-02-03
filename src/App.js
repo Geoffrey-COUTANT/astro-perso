@@ -58,6 +58,7 @@ function App() {
               <Route path={'/galerie'} element={<Galerie />} />
               <Route path={'/admin/connect'} element={<AdminLogin />} />
               <Route path={'/admin'} element={<AdminGuard><Admin /></AdminGuard>} />
+              <Route path="*" element={<NotFound404 />} />
           </Routes>
       </Router>
   );
