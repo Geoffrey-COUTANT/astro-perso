@@ -158,7 +158,11 @@ public class GalleryService
     {
         using var db = _dbFactory.CreateDbContext();
         EnsureSeedStaticGalleryMeta(db);
-        return db.StaticGalleryMeta.OrderBy(x => x.DisplayOrder).Select(x => (x.Id, x.Title, x.Url)).ToList();
+        return db.StaticGalleryMeta.OrderBy(x => x.DisplayOrder)
+            .Select(x => new { x.Id, x.Title, x.Url })
+            .ToList()
+            .Select(x => (x.Id, x.Title, x.Url))
+            .ToList();
     }
 
     private static void EnsureSeedStaticGalleryMeta(AppDbContext db)
