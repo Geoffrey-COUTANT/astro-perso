@@ -40,7 +40,10 @@ if (connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreC
 }
 
 builder.Services.AddDbContextFactory<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+{
+    options.UseNpgsql(connectionString);
+    options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+});
 
 builder.Services.AddCors(options =>
 {
