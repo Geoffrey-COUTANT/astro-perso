@@ -83,6 +83,37 @@ builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 10 * 1024 * 
 
 var app = builder.Build();
 
+// CORS sur toutes les réponses (y compris 500) pour que le navigateur n'affiche pas "CORS error" à la place du vrai message
+static bool IsOriginAllowed(string? origin)
+{
+    if (string.IsNullOrEmpty(origin)) return false;
+    try
+    {
+        var uri = new Uri(origin);
+        if (uri.Host == "localhost" || uri.Host == "127.0.0.1") return true;
+        if (uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)) return true;
+        return uri.Host == "astro-perso.vercel.app";
+    }
+    catch { return false; }
+}
+
+app.Use(async (context, next) =>
+{
+    var origin = context.Request.Headers.Origin.FirstOrDefault();
+    if (IsOriginAllowed(origin))
+        context.Response.OnStarting(() =>
+        {
+            if (!context.Response.Headers.ContainsKey("Access-Control-Allow-Origin"))
+            {
+                context.Response.Headers.Append("Access-Control-Allow-Origin", origin!);
+                context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+                context.Response.Headers.Append("Access-Control-Allow-Headers", "*");
+            }
+            return Task.CompletedTask;
+        });
+    await next();
+});
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext();
@@ -95,7 +126,16 @@ app.Use(async (context, next) =>
     context.Response.Headers.Append("X-Frame-Options", "DENY");
     context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
     context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
-    await next();
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new { error = "Server error", message = ex.Message });
+    }
 });
 
 app.UseCors();
