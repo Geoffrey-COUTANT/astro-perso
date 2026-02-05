@@ -97,11 +97,13 @@ function Admin() {
 
     const allStaticImages = useMemo(
         () =>
-            galleryStaticListFromApi.map((item) => ({
-                id: item.id,
-                title: item.title || "",
-                url: item.url || getStaticImageUrl(item.id),
-            })),
+            galleryStaticListFromApi
+                .filter((item) => item != null && item.id != null)
+                .map((item) => ({
+                    id: item.id,
+                    title: item.title || "",
+                    url: item.url || getStaticImageUrl(item.id) || "",
+                })),
         [galleryStaticListFromApi]
     );
     const visibleStaticImages = allStaticImages.filter((img) => !hiddenStaticIds.includes(img.id));
@@ -109,7 +111,7 @@ function Admin() {
 
     const buildUnifiedImages = () => {
         const apiItems = images.map((img) => ({ ...img, id: String(img.id), isStatic: false }));
-        const staticItems = visibleStaticImages.map((img) => ({ ...img, url: img.url.startsWith("http") ? img.url : img.url, isStatic: true }));
+        const staticItems = visibleStaticImages.map((img) => ({ ...img, url: (img.url && img.url.startsWith("http")) ? img.url : (img.url || ""), isStatic: true }));
         const all = [...apiItems, ...staticItems];
         const orderMap = new Map(unifiedOrder.map((id, i) => [id, i]));
         return all.sort((a, b) => {
@@ -123,9 +125,9 @@ function Admin() {
         if (!API_BASE) return;
         setMeetingsLoading(true);
         Promise.all([
-            fetch(`${API_BASE}/api/meetings`).then((r) => (r.ok ? r.json() : [])),
-            fetch(`${API_BASE}/api/meetings/static`).then((r) => (r.ok ? r.json() : [])),
-            fetch(`${API_BASE}/api/meetings/hidden-static`).then((r) => (r.ok ? r.json() : [])),
+            fetch(`${API_BASE}/api/meetings`).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+            fetch(`${API_BASE}/api/meetings/static`).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+            fetch(`${API_BASE}/api/meetings/hidden-static`).then((r) => (r.ok ? r.json() : [])).catch(() => []),
         ])
             .then(([data, staticList, hiddenIds]) => {
                 setMeetings(Array.isArray(data) ? data : []);
@@ -730,9 +732,9 @@ function Admin() {
                                 </div>
                             )}
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-                                {unifiedImages.map((img, index) => {
+                                {unifiedImages.filter((img) => img != null).map((img, index) => {
                                     const isSelected = selectedForDeletion.has(img.id);
-                                    const imgUrl = img.isStatic ? img.url : (img.url?.startsWith("http") ? img.url : `${API_BASE}${img.url}`);
+                                    const imgUrl = (img.isStatic ? img.url : (img.url?.startsWith("http") ? img.url : (img.url ? `${API_BASE}${img.url}` : `${API_BASE}/api/gallery/${img.id}/file`))) || "";
                                     return (
                                     <div
                                         key={img.id}
@@ -789,14 +791,14 @@ function Admin() {
                             Ces images ne s’affichent plus sur la galerie du site. Cliquez sur « Restaurer » pour les réafficher.
                         </p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-                            {hiddenStaticImages.map((img) => (
+                            {hiddenStaticImages.filter((img) => img != null && img.url != null).map((img) => (
                                 <div
                                     key={img.id}
                                     className={`rounded-2xl overflow-hidden bg-white/5 border border-amber-400/20 backdrop-blur-sm group transition-all duration-300 hover:border-amber-400/40 ${false ? "opacity-50 scale-95" : ""}`}
                                 >
                                     <div className="aspect-square relative">
                                         <img
-                                            src={img.url}
+                                            src={img.url || ""}
                                             alt={img.title}
                                             loading="lazy"
                                             decoding="async"
