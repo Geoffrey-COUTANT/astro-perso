@@ -17,12 +17,20 @@ public class MeetingsService
 
     public List<MeetingItemDto> GetAll()
     {
-        using var db = _dbFactory.CreateDbContext();
-        EnsureSeedStaticMeetings(db);
-        var hidden = new HashSet<string>(db.MeetingHiddenStatic.Select(x => x.StaticId));
-        var fromDb = db.Meetings.OrderBy(x => x.StartDate).Select(x => new MeetingItemDto(x.Id.ToString(), x.Title, x.Description ?? "", x.StartDate, x.EndDate)).ToList();
-        var fromStatic = db.StaticMeetings.Where(s => !hidden.Contains(s.Id)).Select(x => new MeetingItemDto(x.Id, x.Title, x.Description ?? "", x.StartDate, x.EndDate)).ToList();
-        return fromDb.Concat(fromStatic).OrderBy(x => x.StartDate).ToList();
+        try
+        {
+            using var db = _dbFactory.CreateDbContext();
+            EnsureSeedStaticMeetings(db);
+            var hidden = new HashSet<string>(db.MeetingHiddenStatic.Select(x => x.StaticId));
+            var fromDb = db.Meetings.OrderBy(x => x.StartDate).Select(x => new MeetingItemDto(x.Id.ToString(), x.Title, x.Description ?? "", x.StartDate, x.EndDate)).ToList();
+            var fromStatic = db.StaticMeetings.Where(s => !hidden.Contains(s.Id)).Select(x => new MeetingItemDto(x.Id, x.Title, x.Description ?? "", x.StartDate, x.EndDate)).ToList();
+            return fromDb.Concat(fromStatic).OrderBy(x => x.StartDate).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MeetingsService.GetAll] {ex.Message}");
+            return new List<MeetingItemDto>();
+        }
     }
 
     public Meeting? GetById(int id)
@@ -73,15 +81,31 @@ public class MeetingsService
 
     public List<MeetingItemDto> GetAllStatic()
     {
-        using var db = _dbFactory.CreateDbContext();
-        EnsureSeedStaticMeetings(db);
-        return db.StaticMeetings.OrderBy(x => x.StartDate).Select(x => new MeetingItemDto(x.Id, x.Title, x.Description ?? "", x.StartDate, x.EndDate)).ToList();
+        try
+        {
+            using var db = _dbFactory.CreateDbContext();
+            EnsureSeedStaticMeetings(db);
+            return db.StaticMeetings.OrderBy(x => x.StartDate).Select(x => new MeetingItemDto(x.Id, x.Title, x.Description ?? "", x.StartDate, x.EndDate)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MeetingsService.GetAllStatic] {ex.Message}");
+            return new List<MeetingItemDto>();
+        }
     }
 
     public List<string> GetHiddenStaticIds()
     {
-        using var db = _dbFactory.CreateDbContext();
-        return db.MeetingHiddenStatic.Select(x => x.StaticId).ToList();
+        try
+        {
+            using var db = _dbFactory.CreateDbContext();
+            return db.MeetingHiddenStatic.Select(x => x.StaticId).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MeetingsService.GetHiddenStaticIds] {ex.Message}");
+            return new List<string>();
+        }
     }
 
     public void HideStaticId(string staticId)

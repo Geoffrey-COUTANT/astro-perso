@@ -16,18 +16,26 @@ public class ContactService
 
     public ContactInfo Get()
     {
-        using var db = _dbFactory.CreateDbContext();
-        var e = db.ContactInfo.Find(ContactInfoId);
-        if (e != null)
-            return new ContactInfo
-            {
-                Email = e.Email,
-                Phone = e.Phone,
-                AddressLine1 = e.AddressLine1,
-                AddressLine2 = e.AddressLine2
-            };
-        EnsureSeed(db);
-        return new ContactInfo();
+        try
+        {
+            using var db = _dbFactory.CreateDbContext();
+            var e = db.ContactInfo.Find(ContactInfoId);
+            if (e != null)
+                return new ContactInfo
+                {
+                    Email = e.Email,
+                    Phone = e.Phone,
+                    AddressLine1 = e.AddressLine1,
+                    AddressLine2 = e.AddressLine2
+                };
+            EnsureSeed(db);
+            return new ContactInfo();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ContactService.Get] {ex.Message}");
+            return new ContactInfo();
+        }
     }
 
     public ContactInfo Update(string email, string phone, string addressLine1, string addressLine2)

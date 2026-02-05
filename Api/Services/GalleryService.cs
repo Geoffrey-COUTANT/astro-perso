@@ -18,20 +18,28 @@ public class GalleryService
 
     public List<GalleryImage> GetAll()
     {
-        using var db = _dbFactory.CreateDbContext();
-        return db.GalleryImages
-            .OrderBy(x => x.Order)
-            .ThenBy(x => x.CreatedAt)
-            .Select(x => new GalleryImage
-            {
-                Id = x.Id,
-                FileName = x.FileName,
-                Title = x.Title,
-                Description = x.Description,
-                Order = x.Order,
-                CreatedAt = x.CreatedAt
-            })
-            .ToList();
+        try
+        {
+            using var db = _dbFactory.CreateDbContext();
+            return db.GalleryImages
+                .OrderBy(x => x.Order)
+                .ThenBy(x => x.CreatedAt)
+                .Select(x => new GalleryImage
+                {
+                    Id = x.Id,
+                    FileName = x.FileName,
+                    Title = x.Title,
+                    Description = x.Description,
+                    Order = x.Order,
+                    CreatedAt = x.CreatedAt
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GalleryService.GetAll] {ex.Message}");
+            return new List<GalleryImage>();
+        }
     }
 
     public GalleryImage? GetById(Guid id)
@@ -90,7 +98,8 @@ public class GalleryService
 
     public List<string> GetHiddenStaticIds()
     {
-        return GetSettingList("HiddenStaticIds");
+        try { return GetSettingList("HiddenStaticIds"); }
+        catch (Exception ex) { Console.WriteLine($"[GalleryService.GetHiddenStaticIds] {ex.Message}"); return new List<string>(); }
     }
 
     public void HideStaticId(string staticId)
@@ -116,7 +125,8 @@ public class GalleryService
 
     public List<string> GetUnifiedOrder()
     {
-        return GetSettingList("UnifiedOrder");
+        try { return GetSettingList("UnifiedOrder"); }
+        catch (Exception ex) { Console.WriteLine($"[GalleryService.GetUnifiedOrder] {ex.Message}"); return new List<string>(); }
     }
 
     public bool ReorderImages(List<Guid> orderedIds)
@@ -156,13 +166,21 @@ public class GalleryService
 
     public List<(string Id, string Title, string? Url)> GetStaticGalleryList()
     {
-        using var db = _dbFactory.CreateDbContext();
-        EnsureSeedStaticGalleryMeta(db);
-        return db.StaticGalleryMeta.OrderBy(x => x.DisplayOrder)
-            .Select(x => new { x.Id, x.Title, x.Url })
-            .ToList()
-            .Select(x => (x.Id, x.Title, x.Url))
-            .ToList();
+        try
+        {
+            using var db = _dbFactory.CreateDbContext();
+            EnsureSeedStaticGalleryMeta(db);
+            return db.StaticGalleryMeta.OrderBy(x => x.DisplayOrder)
+                .Select(x => new { x.Id, x.Title, x.Url })
+                .ToList()
+                .Select(x => (x.Id, x.Title, x.Url))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GalleryService.GetStaticGalleryList] {ex.Message}");
+            return new List<(string Id, string Title, string? Url)>();
+        }
     }
 
     private static void EnsureSeedStaticGalleryMeta(AppDbContext db)

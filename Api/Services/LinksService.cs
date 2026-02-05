@@ -15,26 +15,34 @@ public class LinksService
 
     public List<UsefulLinkCategory> GetAll()
     {
-        using var db = _dbFactory.CreateDbContext();
-        EnsureSeed(db);
-        return db.LinkCategories
-            .Include(c => c.Links)
-            .OrderBy(c => c.Order)
-            .Select(c => new UsefulLinkCategory
-            {
-                Id = c.Id,
-                Title = c.Title,
-                Order = c.Order,
-                Links = c.Links.OrderBy(l => l.Order).Select(l => new UsefulLinkItem
+        try
+        {
+            using var db = _dbFactory.CreateDbContext();
+            EnsureSeed(db);
+            return db.LinkCategories
+                .Include(c => c.Links)
+                .OrderBy(c => c.Order)
+                .Select(c => new UsefulLinkCategory
                 {
-                    Id = l.Id,
-                    Name = l.Name,
-                    Url = l.Url,
-                    Description = l.Description,
-                    Order = l.Order
-                }).ToList()
-            })
-            .ToList();
+                    Id = c.Id,
+                    Title = c.Title,
+                    Order = c.Order,
+                    Links = c.Links.OrderBy(l => l.Order).Select(l => new UsefulLinkItem
+                    {
+                        Id = l.Id,
+                        Name = l.Name,
+                        Url = l.Url,
+                        Description = l.Description,
+                        Order = l.Order
+                    }).ToList()
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[LinksService.GetAll] {ex.Message}");
+            return new List<UsefulLinkCategory>();
+        }
     }
 
     public UsefulLinkCategory? GetCategory(Guid id)
