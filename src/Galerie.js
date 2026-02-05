@@ -27,11 +27,11 @@ function Galerie() {
             fetch(`${API_BASE}/api/gallery/unified-order`).then((r) => (r.ok ? r.json() : [])),
         ])
             .then(([apiData, staticData, hiddenData, orderData]) => {
-                setApiImages(Array.isArray(apiData) ? apiData.map((img, idx) => ({
+                setApiImages(Array.isArray(apiData) ? apiData.filter((img) => img != null).map((img, idx) => ({
                     id: String(img.id),
                     title: img.title || `Image ${idx + 1}`,
                     description: img.description || "Photo d'astronomie du Club Astro Véga de la Lyre",
-                    url: img.url?.startsWith("http") ? img.url : `${API_BASE}${img.url}`,
+                    url: img.url?.startsWith("http") ? img.url : (img.url ? `${API_BASE}${img.url}` : `${API_BASE}/api/gallery/${img.id}/file`),
                 })) : []);
                 setStaticListFromApi(Array.isArray(staticData) ? staticData : []);
                 setHiddenStaticIds(Array.isArray(hiddenData) ? hiddenData : []);
@@ -42,12 +42,14 @@ function Galerie() {
 
     const staticImages = useMemo(
         () =>
-            staticListFromApi.map((item, idx) => ({
-                id: item.id,
-                title: item.title || `Image ${idx + 1}`,
-                description: "Photo d'astronomie du Club Astro Véga de la Lyre",
-                url: item.url || getStaticImageUrl(item.id),
-            })),
+            staticListFromApi
+                .filter((item) => item != null && item.id != null)
+                .map((item, idx) => ({
+                    id: item.id,
+                    title: item.title || `Image ${idx + 1}`,
+                    description: "Photo d'astronomie du Club Astro Véga de la Lyre",
+                    url: item.url || getStaticImageUrl(item.id) || "",
+                })),
         [staticListFromApi]
     );
 
@@ -121,10 +123,13 @@ function Galerie() {
     }, []);
 
     const slots = [-2, -1, 0, 1, 2];
-    const visible = slots.map((offset) => {
-        const idx = mod(currentIndex + offset, images.length);
-        return { offset, idx, img: images[idx] };
-    });
+    const visible = images.length === 0
+        ? []
+        : slots.map((offset) => {
+            const idx = mod(currentIndex + offset, images.length);
+            const img = images[idx];
+            return img ? { offset, idx, img } : null;
+        }).filter(Boolean);
 
     const onPointerDown = (e) => {
         resetIdle();
@@ -188,6 +193,7 @@ function Galerie() {
                             <div className="absolute inset-0 bg-black bg-opacity-10 backdrop-blur-[1px]" />
 
                             {visible.map(({ offset, img }) => {
+                                if (!img || img.url == null) return null;
                                 const isCenter = offset === 0;
 
                                 const x = offset * 260;
