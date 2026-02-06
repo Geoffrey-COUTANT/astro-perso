@@ -137,6 +137,7 @@ app.Use(async (context, next) =>
             var db = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext();
             db.Database.Migrate();
             Console.WriteLine("[Startup] Migrations appliquées avec succès.");
+            DatabaseSeed.Run(db);
             break;
         }
         catch (Exception ex)
