@@ -3,9 +3,16 @@ import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { getStaticImageUrl } from "./data/galleryStaticImages";
+import { getStaticImageUrl, allImages } from "./data/galleryStaticImages";
 
 const API_BASE = process.env.REACT_APP_API_URL || "";
+
+const FALLBACK_STATIC_IMAGES = allImages.map((url, i) => ({
+    id: `static-${i}`,
+    title: `Image ${[14, 15, 16, 17, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47][i]}`,
+    description: "Photo d'astronomie du Club Astro Véga de la Lyre",
+    url: url || getStaticImageUrl(`static-${i}`) || "",
+}));
 
 function mod(n, m) {
     return ((n % m) + m) % m;
@@ -19,25 +26,30 @@ function Galerie() {
     const [staticListFromApi, setStaticListFromApi] = useState([]);
 
     useEffect(() => {
-        if (!API_BASE) return;
-        Promise.all([
-            fetch(`${API_BASE}/api/gallery`).then((r) => (r.ok ? r.json() : [])),
-            fetch(`${API_BASE}/api/gallery/static-list`).then((r) => (r.ok ? r.json() : [])),
-            fetch(`${API_BASE}/api/gallery/hidden-static`).then((r) => (r.ok ? r.json() : [])),
-            fetch(`${API_BASE}/api/gallery/unified-order`).then((r) => (r.ok ? r.json() : [])),
-        ])
-            .then(([apiData, staticData, hiddenData, orderData]) => {
-                setApiImages(Array.isArray(apiData) ? apiData.filter((img) => img != null).map((img, idx) => ({
-                    id: String(img.id),
-                    title: img.title || `Image ${idx + 1}`,
-                    description: img.description || "Photo d'astronomie du Club Astro Véga de la Lyre",
-                    url: img.url?.startsWith("http") ? img.url : (img.url ? `${API_BASE}${img.url}` : `${API_BASE}/api/gallery/${img.id}/file`),
-                })) : []);
-                setStaticListFromApi(Array.isArray(staticData) ? staticData : []);
-                setHiddenStaticIds(Array.isArray(hiddenData) ? hiddenData : []);
-                setUnifiedOrder(Array.isArray(orderData) ? orderData : []);
-            })
-            .catch(() => {});
+        if (API_BASE) {
+            Promise.all([
+                fetch(`${API_BASE}/api/gallery`).then((r) => (r.ok ? r.json() : [])),
+                fetch(`${API_BASE}/api/gallery/static-list`).then((r) => (r.ok ? r.json() : [])),
+                fetch(`${API_BASE}/api/gallery/hidden-static`).then((r) => (r.ok ? r.json() : [])),
+                fetch(`${API_BASE}/api/gallery/unified-order`).then((r) => (r.ok ? r.json() : [])),
+            ])
+                .then(([apiData, staticData, hiddenData, orderData]) => {
+                    setApiImages(Array.isArray(apiData) ? apiData.filter((img) => img != null).map((img, idx) => ({
+                        id: String(img.id),
+                        title: img.title || `Image ${idx + 1}`,
+                        description: img.description || "Photo d'astronomie du Club Astro Véga de la Lyre",
+                        url: img.url?.startsWith("http") ? img.url : (img.url ? `${API_BASE}${img.url}` : `${API_BASE}/api/gallery/${img.id}/file`),
+                    })) : []);
+                    setStaticListFromApi(Array.isArray(staticData) && staticData.length > 0 ? staticData : FALLBACK_STATIC_IMAGES);
+                    setHiddenStaticIds(Array.isArray(hiddenData) ? hiddenData : []);
+                    setUnifiedOrder(Array.isArray(orderData) ? orderData : []);
+                })
+                .catch(() => {
+                    setStaticListFromApi(FALLBACK_STATIC_IMAGES);
+                });
+        } else {
+            setStaticListFromApi(FALLBACK_STATIC_IMAGES);
+        }
     }, []);
 
     const staticImages = useMemo(

@@ -10,15 +10,18 @@ public static class DatabaseSeed
     {
         try
         {
-            SeedStaticMeetings(db);
-            SeedStaticGalleryMeta(db);
-            SeedMeetings(db);
+            var addedMeetings = SeedStaticMeetings(db);
+            var addedGallery = SeedStaticGalleryMeta(db);
+            var addedDynamic = SeedMeetings(db);
             db.SaveChanges();
-            Console.WriteLine("[Startup] Seed des données (réunions + galerie statique) appliqué.");
+            Console.WriteLine($"[Startup] Seed OK: static_meetings +{addedMeetings}, static_gallery_meta +{addedGallery}, meetings +{addedDynamic}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Startup] Seed échoué (non bloquant): {ex.Message}");
+            Console.WriteLine($"[Startup] Seed échoué: {ex.Message}");
+            Console.WriteLine($"[Startup] Stack: {ex.StackTrace}");
+            if (ex.InnerException != null)
+                Console.WriteLine($"[Startup] Inner: {ex.InnerException.Message}");
         }
     }
 
@@ -50,28 +53,34 @@ public static class DatabaseSeed
         {
             if (existing.Contains(Id)) continue;
             db.StaticMeetings.Add(new StaticMeetingEntity { Id = Id, Title = Title, Description = Desc, StartDate = Start, EndDate = End });
+            added++;
         }
+        return added;
     }
 
-    private static void SeedStaticGalleryMeta(AppDbContext db)
+    private static int SeedStaticGalleryMeta(AppDbContext db)
     {
         var existing = new HashSet<string>(db.StaticGalleryMeta.Select(x => x.Id));
+        var added = 0;
         var titles = new[] { "Image 14", "Image 15", "Image 16", "Image 17", "Image 20", "Image 21", "Image 22", "Image 23", "Image 24", "Image 25", "Image 26", "Image 27", "Image 28", "Image 29", "Image 30", "Image 31", "Image 32", "Image 33", "Image 34", "Image 35", "Image 36", "Image 37", "Image 38", "Image 39", "Image 40", "Image 41", "Image 42", "Image 43", "Image 44", "Image 45", "Image 46", "Image 47" };
         for (var i = 0; i < titles.Length; i++)
         {
             var id = $"static-{i}";
             if (existing.Contains(id)) continue;
             db.StaticGalleryMeta.Add(new StaticGalleryMetaEntity { Id = id, Title = titles[i], Url = null, DisplayOrder = i });
+            added++;
         }
+        return added;
     }
 
-    private static void SeedMeetings(AppDbContext db)
+    private static int SeedMeetings(AppDbContext db)
     {
-        if (db.Meetings.Any()) return;
+        if (db.Meetings.Any()) return 0;
         var now = DateTime.UtcNow;
         db.Meetings.Add(new MeetingEntity { Title = "Réunion mensuelle", Description = "Réunion habituelle du club à la salle polyvalente.", StartDate = new DateTime(2025, 9, 19, 20, 30, 0, DateTimeKind.Utc), EndDate = new DateTime(2025, 9, 19, 22, 30, 0, DateTimeKind.Utc), CreatedAt = now });
         db.Meetings.Add(new MeetingEntity { Title = "Réunion mensuelle", Description = "Réunion habituelle du club.", StartDate = new DateTime(2025, 10, 17, 20, 30, 0, DateTimeKind.Utc), EndDate = new DateTime(2025, 10, 17, 22, 30, 0, DateTimeKind.Utc), CreatedAt = now });
         db.Meetings.Add(new MeetingEntity { Title = "Réunion mensuelle", Description = "Réunion habituelle du club.", StartDate = new DateTime(2025, 11, 21, 20, 30, 0, DateTimeKind.Utc), EndDate = new DateTime(2025, 11, 21, 22, 30, 0, DateTimeKind.Utc), CreatedAt = now });
         db.Meetings.Add(new MeetingEntity { Title = "Nuit des étoiles", Description = "Observation publique au site de Bois-Sec. Venez avec vos télescopes !", StartDate = new DateTime(2025, 8, 1, 22, 30, 0, DateTimeKind.Utc), EndDate = new DateTime(2025, 8, 2, 0, 30, 0, DateTimeKind.Utc), CreatedAt = now });
+        return 4;
     }
 }

@@ -4,6 +4,7 @@ import Header from "./components/Header/Header";
 import moment from 'moment';
 import 'moment/locale/fr';
 import { Calendar, MapPin, Clock, Info } from "lucide-react";
+import { getStaticMeetingsFallback } from "./data/staticMeetingsFallback";
 moment.locale('fr');
 
 const API_BASE = process.env.REACT_APP_API_URL || "";
@@ -12,22 +13,25 @@ const Reunions = () => {
     const [events, setEvents] = useState([]);
 
     useEffect(() => {
-        if (!API_BASE) return;
-        fetch(`${API_BASE}/api/meetings`)
-            .then((r) => (r.ok ? r.json() : []))
-            .then((data) => {
-                const list = Array.isArray(data)
-                    ? data.map((m) => ({
-                          id: m.id,
-                          title: m.title,
-                          description: m.description || "",
-                          start: new Date(m.startDate),
-                          end: new Date(m.endDate),
-                      }))
-                    : [];
-                setEvents(list.sort((a, b) => a.start - b.start));
-            })
-            .catch(() => setEvents([]));
+        if (API_BASE) {
+            fetch(`${API_BASE}/api/meetings`)
+                .then((r) => (r.ok ? r.json() : []))
+                .then((data) => {
+                    const list = Array.isArray(data)
+                        ? data.map((m) => ({
+                              id: m.id,
+                              title: m.title,
+                              description: m.description || "",
+                              start: new Date(m.startDate),
+                              end: new Date(m.endDate),
+                          }))
+                        : [];
+                    setEvents(list.length > 0 ? list.sort((a, b) => a.start - b.start) : getStaticMeetingsFallback());
+                })
+                .catch(() => setEvents(getStaticMeetingsFallback()));
+        } else {
+            setEvents(getStaticMeetingsFallback());
+        }
     }, []);
 
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
