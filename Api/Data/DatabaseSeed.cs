@@ -25,9 +25,10 @@ public static class DatabaseSeed
         }
     }
 
-    private static void SeedStaticMeetings(AppDbContext db)
+    private static int SeedStaticMeetings(AppDbContext db)
     {
         var existing = new HashSet<string>(db.StaticMeetings.Select(x => x.Id));
+        var added = 0;
         var items = new[]
         {
             (Id: "static-1", Title: "Assemblée Générale", Desc: "", Start: new DateTime(2026, 1, 23, 20, 30, 0, DateTimeKind.Utc), End: new DateTime(2026, 1, 23, 22, 30, 0, DateTimeKind.Utc)),
