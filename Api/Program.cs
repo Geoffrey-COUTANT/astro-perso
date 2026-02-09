@@ -70,10 +70,15 @@ builder.Services.AddCors(options =>
         policy.SetIsOriginAllowed(origin =>
             {
                 if (string.IsNullOrEmpty(origin)) return false;
-                var uri = new Uri(origin);
-                if (uri.Host == "localhost" || uri.Host == "127.0.0.1") return true;
-                if (uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)) return true;
-                return uri.Host == "astro-perso.vercel.app";
+                try
+                {
+                    var uri = new Uri(origin);
+                    if (uri.Host == "localhost" || uri.Host == "127.0.0.1") return true;
+                    if (uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)) return true;
+                    if (uri.Host == "astro-perso.vercel.app") return true;
+                    return origin.Contains("vercel.app", StringComparison.OrdinalIgnoreCase);
+                }
+                catch { return false; }
             })
             .AllowAnyHeader()
             .AllowAnyMethod();
@@ -103,7 +108,9 @@ static bool IsOriginAllowed(string? origin)
         var uri = new Uri(origin);
         if (uri.Host == "localhost" || uri.Host == "127.0.0.1") return true;
         if (uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)) return true;
-        return uri.Host == "astro-perso.vercel.app";
+        if (uri.Host == "astro-perso.vercel.app") return true;
+        if (origin.Contains("vercel.app", StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
     }
     catch { return false; }
 }
@@ -171,7 +178,6 @@ app.Use(async (context, next) =>
     }
 });
 
-app.UseCors();
 app.UseSwagger();
 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "API Club Astro Véga v1"));
 if (!app.Environment.IsDevelopment())
