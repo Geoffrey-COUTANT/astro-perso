@@ -65,8 +65,7 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(name: "cors",
-    policy => 
+    options.AddPolicy("cors", policy =>
     {
         policy.AllowAnyOrigin();
         policy.AllowAnyMethod();
