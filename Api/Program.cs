@@ -118,7 +118,22 @@ static bool IsOriginAllowed(string? origin)
 app.Use(async (context, next) =>
 {
     var origin = context.Request.Headers.Origin.FirstOrDefault();
-    if (IsOriginAllowed(origin))
+    var allowed = IsOriginAllowed(origin);
+
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.StatusCode = 204;
+        if (allowed)
+        {
+            context.Response.Headers.Append("Access-Control-Allow-Origin", origin!);
+            context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+            context.Response.Headers.Append("Access-Control-Allow-Headers", "*");
+            context.Response.Headers.Append("Access-Control-Max-Age", "86400");
+        }
+        return;
+    }
+
+    if (allowed)
         context.Response.OnStarting(() =>
         {
             if (!context.Response.Headers.ContainsKey("Access-Control-Allow-Origin"))
