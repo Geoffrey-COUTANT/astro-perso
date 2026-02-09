@@ -65,23 +65,12 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddDefaultPolicy(name: "cors",
+    policy => 
     {
-        policy.SetIsOriginAllowed(origin =>
-            {
-                if (string.IsNullOrEmpty(origin)) return false;
-                try
-                {
-                    var uri = new Uri(origin);
-                    if (uri.Host == "localhost" || uri.Host == "127.0.0.1") return true;
-                    if (uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)) return true;
-                    if (uri.Host == "astro-perso.vercel.app") return true;
-                    return origin.Contains("vercel.app", StringComparison.OrdinalIgnoreCase);
-                }
-                catch { return false; }
-            })
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        policy.AllowAnyOrigin();
+        policy.AllowAnyMethod();
+        policy.AllowAnyHeader();
     });
 });
 
@@ -99,53 +88,8 @@ builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 10 * 1024 * 
 
 var app = builder.Build();
 
-// CORS sur toutes les réponses (y compris 500) pour que le navigateur n'affiche pas "CORS error" à la place du vrai message
-static bool IsOriginAllowed(string? origin)
-{
-    if (string.IsNullOrEmpty(origin)) return false;
-    try
-    {
-        var uri = new Uri(origin);
-        if (uri.Host == "localhost" || uri.Host == "127.0.0.1") return true;
-        if (uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)) return true;
-        if (uri.Host == "astro-perso.vercel.app") return true;
-        if (origin.Contains("vercel.app", StringComparison.OrdinalIgnoreCase)) return true;
-        return false;
-    }
-    catch { return false; }
-}
-
-app.Use(async (context, next) =>
-{
-    var origin = context.Request.Headers.Origin.FirstOrDefault();
-    var allowed = IsOriginAllowed(origin);
-
-    if (context.Request.Method == "OPTIONS")
-    {
-        context.Response.StatusCode = 204;
-        if (allowed)
-        {
-            context.Response.Headers.Append("Access-Control-Allow-Origin", origin!);
-            context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-            context.Response.Headers.Append("Access-Control-Allow-Headers", "*");
-            context.Response.Headers.Append("Access-Control-Max-Age", "86400");
-        }
-        return;
-    }
-
-    if (allowed)
-        context.Response.OnStarting(() =>
-        {
-            if (!context.Response.Headers.ContainsKey("Access-Control-Allow-Origin"))
-            {
-                context.Response.Headers.Append("Access-Control-Allow-Origin", origin!);
-                context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-                context.Response.Headers.Append("Access-Control-Allow-Headers", "*");
-            }
-            return Task.CompletedTask;
-        });
-    await next();
-});
+// CORS global basé sur la policy définie plus haut (AllowAnyOrigin/Method/Header)
+app.UseCors("cors");
 
 // Appliquer les migrations au démarrage (avec retry si Postgres n'est pas encore prêt)
 {
