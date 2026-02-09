@@ -1,34 +1,58 @@
-# Seed SQL pour la base de données
+# BDD : tout créer avec 2 fichiers SQL
 
-Ces scripts permettent de réinjecter en base les **réunions** et les **métadonnées de la galerie statique** après une réinitialisation ou une migration.
+Aucune suppression : les scripts **créent** les tables et **ajoutent** les données. Tu lances les fichiers dans l’ordre et tu peux relancer l’API (GET/POST enregistrent tout en BDD).
 
-## Prérequis
+## 1. Créer la base (une fois)
 
-- PostgreSQL avec les tables déjà créées (migrations EF Core appliquées).
-- Connexion à la BDD (ex. variable `DATABASE_URL` ou `psql -h ... -U ... -d ...`).
-
-## Exécution
+Si la base `astro` n’existe pas :
 
 ```bash
-# Depuis la racine du projet (ou depuis Api/)
-psql "$DATABASE_URL" -f Api/Seed/seed_meetings.sql
-psql "$DATABASE_URL" -f Api/Seed/seed_gallery.sql
+psql -h localhost -U postgres -d postgres -c "CREATE DATABASE astro;"
 ```
 
-Ou depuis un client SQL (DBeaver, pgAdmin, etc.) : ouvrir chaque fichier et exécuter son contenu.
+(Sur Railway, la base existe déjà.)
 
-## Contenu des scripts
+## 2. Créer les tables
 
-| Fichier | Tables | Description |
-|--------|--------|-------------|
-| `seed_meetings.sql` | `meetings`, `static_meetings` | Réunions dynamiques (quelques exemples) + réunions statiques (calendrier type du club). |
-| `seed_gallery.sql` | `static_gallery_meta` | Métadonnées des images statiques de la galerie (static-0 à static-31, correspondant aux images 14–47 du front). |
+```bash
+psql -h localhost -U postgres -d astro -f Api/Seed/00_schema.sql
+```
 
-## Photos uploadées (`gallery_images`)
+Ou sur Railway (remplace `$DATABASE_URL` par ta chaîne de connexion) :
 
-Les **photos uploadées** (fichiers binaires) ne peuvent **pas** être restaurées par SQL. Si tu as perdu le contenu de la table `gallery_images`, il faut **re-uploader les photos** via l’interface admin (/admin → Galerie). Les scripts ci-dessus ne touchent pas à `gallery_images`.
+```bash
+psql "$DATABASE_URL" -f Api/Seed/00_schema.sql
+```
 
-## Réexécution
+- **00_schema.sql** : crée toutes les tables avec `CREATE TABLE IF NOT EXISTS`. Ne supprime rien.
+- À la fin, il remplit `__EFMigrationsHistory` pour que l’API ne réapplique pas les migrations.
 
-- **seed_meetings.sql** : chaque exécution **ajoute** de nouvelles lignes dans `meetings`. Pour éviter les doublons, exécute une seule fois ou vide la table `meetings` avant de réexécuter. Les inserts dans `static_meetings` utilisent `ON CONFLICT DO NOTHING` (pas de doublon sur l’id).
-- **seed_gallery.sql** : `ON CONFLICT ("Id") DO NOTHING` — tu peux réexécuter sans créer de doublons.
+## 3. Remplir les données initiales
+
+```bash
+psql -h localhost -U postgres -d astro -f Api/Seed/01_seed.sql
+```
+
+- **01_seed.sql** : réunions statiques, galerie statique, contact. Utilise `ON CONFLICT DO NOTHING` : tu peux le relancer sans doublon. Les réunions dynamiques sont ajoutées par l’API au premier démarrage si la table est vide.
+
+## 4. Lancer l’API
+
+```bash
+cd Api
+dotnet run
+```
+
+L’API fait des **GET** (lecture) et **POST/PUT** (écriture). Rien ne supprime les tables ; tout est enregistré en BDD.
+
+## Fichiers
+
+| Fichier        | Rôle |
+|----------------|------|
+| **00_schema.sql** | Crée toutes les tables (et `__EFMigrationsHistory`). À lancer une fois. |
+| **01_seed.sql**   | Données initiales (réunions, galerie statique, contact). Relançable. |
+| seed_meetings.sql | Ancien script réunions seules (optionnel). |
+| seed_gallery.sql  | Ancien script galerie statique seule (optionnel). |
+
+## Photos uploadées
+
+Les photos envoyées via l’admin sont stockées dans `gallery_images`. Les scripts SQL ne les contiennent pas ; il faut les re-uploader via le site si tu changes de BDD.
