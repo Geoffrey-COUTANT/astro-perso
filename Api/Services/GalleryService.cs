@@ -37,7 +37,10 @@ public class GalleryService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[GalleryService.GetAll] {ex.Message}");
+            Console.WriteLine($"[GalleryService.GetAll] Erreur: {ex.Message}");
+            Console.WriteLine($"[GalleryService.GetAll] Stack: {ex.StackTrace}");
+            if (ex.InnerException != null)
+                Console.WriteLine($"[GalleryService.GetAll] Inner: {ex.InnerException.Message}");
             return new List<GalleryImage>();
         }
     }

@@ -87,10 +87,12 @@ const Reunions = () => {
     };
 
     return (
-        <div className="w-full bg-[url('./components/img/background-reunion.svg')] bg-cover bg-fixed bg-center min-h-screen flex flex-col text-white">
-            <Header />
+        <div className="w-full text-white relative flex flex-col min-h-screen bg-[url('./components/img/background-reunion.svg')] bg-cover bg-fixed bg-center">
+            <div className="fixed top-0 left-0 right-0 z-[100]">
+                <Header />
+            </div>
             
-            <main className="flex-grow px-6 py-12 font-kodchasan font-medium">
+            <main className="flex-grow px-6 py-12 pt-32 font-kodchasan font-medium">
                 <div className="text-center mb-12 animate-zoom-rotate">
                     <h1 className="text-5xl font-bold mb-4">📅 Réunions & Événements</h1>
                     <p className="text-xl text-gray-300">Découvrez nos prochaines activités astronomiques</p>

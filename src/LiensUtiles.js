@@ -64,9 +64,11 @@ function LiensUtiles() {
     }, []);
 
     return (
-        <div className='w-full text-white text-center'>
-            <div className='bg-[url("./components/img/background-liens.jpg")] bg-cover bg-center bg-fixed min-h-screen flex flex-col'>
+        <div className='w-full text-white text-center relative'>
+            <div className="fixed top-0 left-0 right-0 z-[100]">
                 <Header />
+            </div>
+            <div className='bg-[url("./components/img/background-liens.jpg")] bg-cover bg-center bg-fixed min-h-screen flex flex-col pt-32'>
                 <main className="flex-grow flex flex-col items-center px-6 py-12 font-kodchasan font-medium w-full">
                     <h1 className='text-5xl font-bold mb-12 text-center w-full animate-fade-scale'>
                         🔗 Liens Utiles

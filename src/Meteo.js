@@ -88,7 +88,7 @@ function Meteo() {
                         data-aos-delay="300"
                     >
                         <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-center sm:text-left">
-                            Mauvais Temps ?
+                        Mauvais Temps ?
                         </h2>
                         <p className="text-base sm:text-lg text-white/90 mb-4">
                             Si le ciel ne coopère pas, nous nous retrouverons dans une salle prêtée par la mairie pour des discussions et un diaporama.
@@ -130,8 +130,8 @@ function Meteo() {
                             rel="noopener noreferrer"
                             className="text-cyan-300 hover:text-cyan-200 underline underline-offset-4 transition-colors"
                         >
-                            l’échelle de Pickering
-                        </a>
+                        l’échelle de Pickering
+                    </a>
                     </h2>
                     <p
                         className="text-base sm:text-xl text-center text-white/95 max-w-3xl mb-10 sm:mb-14"
