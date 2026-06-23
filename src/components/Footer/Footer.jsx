@@ -7,7 +7,7 @@ function Footer() {
                 <img src={logo} alt="Logo ClubAstroVégadelaLyre" className="h-16 mx-auto mb-4" />
 
                 <p className="text-sm">
-                    © 2025 Geoffrey Coutant, France. Tous droits réservés.
+                    © 2026 Geoffrey Coutant, France. Tous droits réservés.
                 </p>
             </div>
         </footer>

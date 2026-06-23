@@ -58,7 +58,7 @@ function Contact() {
                         📧 Contactez-nous
                     </h1>
                     <div className="max-w-4xl w-full space-y-8">
-                        <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 text-left animate-slide-left animation-delay-200">
+                        <div className="bg-black bg-opacity-20 backdrop-blur-sm rounded-xl p-8 text-left animate-slide-left animation-delay-200">
                             <h2 className='text-3xl font-bold mb-6 text-center'>Nous contacter</h2>
                             <div className="space-y-6 text-xl">
                                 <div className="flex items-center space-x-4 animate-fade-scale animation-delay-300">
@@ -90,7 +90,7 @@ function Contact() {
                             </div>
                         </div>
 
-                        <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 text-left animate-slide-right animation-delay-400">
+                        <div className="bg-black bg-opacity-20 backdrop-blur-sm rounded-xl p-8 text-left animate-slide-right animation-delay-400">
                             <h2 className='text-3xl font-bold mb-6 text-center'>Formulaire de contact</h2>
                             <form className="space-y-4" onSubmit={handleContactSubmit}>
                                 <div>
@@ -141,7 +141,7 @@ function Contact() {
                                 </button>
                             </form>
                         </div>
-                        <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 text-center animate-rotate-in animation-delay-600">
+                        <div className="bg-black bg-opacity-20 backdrop-blur-sm rounded-xl p-8 text-center animate-rotate-in animation-delay-600">
                             <h2 className='text-3xl font-bold mb-6'>Rejoignez-nous !</h2>
                             <p className="text-xl mb-4">
                                 Intéressé par l'astronomie ? N'hésitez pas à nous contacter pour en savoir plus sur nos activités et nos réunions mensuelles.
