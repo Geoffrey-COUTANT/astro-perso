@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Api.Data;
 using Api.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
@@ -78,6 +79,13 @@ builder.Services.AddSingleton<MeetingsService>();
 builder.Services.AddSingleton<LinksService>();
 builder.Services.AddSingleton<ContactService>();
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownProxies.Clear();
+    options.KnownNetworks.Clear();
+});
+
 var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrEmpty(port))
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
@@ -86,6 +94,8 @@ if (!string.IsNullOrEmpty(port))
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 10 * 1024 * 1024);
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 // CORS global basé sur la policy définie plus haut (AllowAnyOrigin/Method/Header)
 app.UseCors("cors");
