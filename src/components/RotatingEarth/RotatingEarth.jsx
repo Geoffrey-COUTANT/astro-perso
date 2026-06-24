@@ -10,8 +10,20 @@ function EarthPlanet() {
     const earthRef = useRef();
     const [isDragging, setIsDragging] = useState(false);
     const [isOver, setIsOver] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
     const lastPointer = useRef({ x: 0, y: 0 });
     const { gl } = useThree();
+
+    useEffect(() => {
+        const checkMobile = () => {
+            const ua = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const width = window.innerWidth < 768;
+            setIsMobile(ua || width);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     const earthTexture = useTexture(
         require('../img/8k_earth_daymap.jpg')
@@ -85,6 +97,7 @@ function EarthPlanet() {
                 onPointerDown={handlePointerDown}
                 onPointerOver={() => setIsOver(true)}
                 onPointerOut={() => setIsOver(false)}
+                scale={isMobile ? 0.5 : 1}
             >
                 <sphereGeometry args={[2, 64, 64]} />
                 <meshPhongMaterial
