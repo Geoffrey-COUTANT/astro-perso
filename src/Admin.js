@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Upload, Trash2, ArrowLeft, ImagePlus, Sparkles, Calendar, Link2, Mail, Images, RotateCcw, Save, X, Pencil, Plus, GripVertical, LogOut } from "lucide-react";
+import { Upload, Trash2, ArrowLeft, ImagePlus, Sparkles, Calendar, Link2, Mail, Images, RotateCcw, Save, X, Pencil, Plus, GripVertical, LogOut, Menu } from "lucide-react";
 import { getStaticImageUrl } from "./data/galleryStaticImages";
 import { ADMIN_TOKEN_KEY } from "./AdminLogin";
 
@@ -17,6 +17,12 @@ function Admin() {
     const navigate = useNavigate();
     const token = sessionStorage.getItem(ADMIN_TOKEN_KEY);
     const [activeSection, setActiveSection] = useState("galerie");
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    const handleSectionChange = (sectionId) => {
+        setActiveSection(sectionId);
+        setIsSidebarOpen(false);
+    };
     const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
@@ -587,43 +593,79 @@ function Admin() {
                 }}
             />
 
-            <div className="flex flex-1 min-h-0">
-            <aside className="fixed left-0 top-0 bottom-0 w-56 sm:w-64 z-20 border-r border-white/10 bg-black/40 backdrop-blur-md flex flex-col pt-6 pb-6 px-3">
-                <Link
-                    to="/"
-                    className="inline-flex items-center gap-2 text-cyan-300/90 hover:text-cyan-200 transition mb-6 group px-2"
-                >
-                    <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform flex-shrink-0" />
-                    <span className="text-sm font-medium">Retour au site</span>
-                </Link>
-                <nav className="flex flex-col gap-1 flex-1">
-                    {ADMIN_SECTIONS.map(({ id, label, icon: Icon }) => (
-                        <button
-                            key={id}
-                            type="button"
-                            onClick={() => setActiveSection(id)}
-                            className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-left transition-all duration-200 ${
-                                activeSection === id
-                                    ? "bg-indigo-500/30 border border-indigo-400/40 text-white shadow-lg shadow-indigo-500/10"
-                                    : "text-gray-400 hover:text-white hover:bg-white/10 border border-transparent"
-                            }`}
-                        >
-                            <Icon size={20} className="flex-shrink-0" />
-                            <span className="font-medium truncate">{label}</span>
-                        </button>
-                    ))}
-                </nav>
+            {/* Mobile Header Bar */}
+            <header className="fixed top-0 left-0 right-0 h-16 bg-slate-950/80 backdrop-blur-md border-b border-white/10 z-30 flex items-center justify-between px-4 md:hidden">
                 <button
                     type="button"
-                    onClick={handleLogout}
-                    className="mt-auto flex items-center gap-3 w-full px-4 py-3 rounded-xl text-left text-red-300 hover:text-red-200 hover:bg-red-500/20 border border-transparent transition-all"
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition"
+                    aria-label="Menu"
                 >
-                    <LogOut size={20} className="flex-shrink-0" />
-                    <span className="font-medium">Déconnexion</span>
+                    <Menu size={24} />
                 </button>
-            </aside>
+                <span className="font-bold text-lg bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">
+                    Astro Véga Admin
+                </span>
+                <div className="w-10" />
+            </header>
 
-            <main ref={mainContentRef} className="flex-1 min-w-0 overflow-auto ml-56 sm:ml-64 px-4 sm:px-6 py-10 sm:py-14 min-h-screen">
+            {/* Mobile Sidebar Overlay / Backdrop */}
+            {isSidebarOpen && (
+                <div
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden animate-fade-in"
+                />
+            )}
+
+            <div className="flex flex-1 min-h-0">
+                <aside className={`fixed md:sticky top-0 bottom-0 left-0 w-64 h-screen z-50 md:z-20 border-r border-white/10 bg-slate-950/95 md:bg-black/40 backdrop-blur-md flex flex-col pt-6 pb-6 px-3 transition-transform duration-300 ease-in-out shrink-0 ${
+                    isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+                }`}>
+                    <div className="flex items-center justify-between mb-6 px-2">
+                        <Link
+                            to="/"
+                            className="inline-flex items-center gap-2 text-cyan-300/90 hover:text-cyan-200 transition group"
+                        >
+                            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform flex-shrink-0" />
+                            <span className="text-sm font-medium text-cyan-200">Retour au site</span>
+                        </Link>
+                        {/* Close button on mobile */}
+                        <button
+                            type="button"
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 md:hidden"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <nav className="flex flex-col gap-1 flex-1">
+                        {ADMIN_SECTIONS.map(({ id, label, icon: Icon }) => (
+                            <button
+                                key={id}
+                                type="button"
+                                onClick={() => handleSectionChange(id)}
+                                className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-left transition-all duration-200 ${
+                                    activeSection === id
+                                        ? "bg-indigo-500/30 border border-indigo-400/40 text-white shadow-lg shadow-indigo-500/10"
+                                        : "text-gray-400 hover:text-white hover:bg-white/10 border border-transparent"
+                                }`}
+                            >
+                                <Icon size={20} className="flex-shrink-0" />
+                                <span className="font-medium truncate">{label}</span>
+                            </button>
+                        ))}
+                    </nav>
+                    <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="mt-auto flex items-center gap-3 w-full px-4 py-3 rounded-xl text-left text-red-300 hover:text-red-200 hover:bg-red-500/20 border border-transparent transition-all"
+                    >
+                        <LogOut size={20} className="flex-shrink-0" />
+                        <span className="font-medium">Déconnexion</span>
+                    </button>
+                </aside>
+
+                <main ref={mainContentRef} className="flex-1 min-w-0 overflow-auto px-4 sm:px-6 py-10 sm:py-14 pt-20 md:pt-14 min-h-screen">
                 <div className="w-full max-w-4xl mx-auto">
                 {activeSection === "galerie" && (
                     <>
