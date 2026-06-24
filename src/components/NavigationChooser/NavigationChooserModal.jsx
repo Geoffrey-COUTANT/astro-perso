@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Map, Navigation, Compass} from "lucide-react";
+import { Map, Navigation, Compass } from "lucide-react";
 
 const NAV_OPTIONS = [
     {
