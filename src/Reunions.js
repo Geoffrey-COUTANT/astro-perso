@@ -4,6 +4,7 @@ import Header from "./components/Header/Header";
 import moment from 'moment';
 import 'moment/locale/fr';
 import { Calendar, MapPin, Clock, Info } from "lucide-react";
+import MapLink from "./components/NavigationChooser/MapLink";
 import { getStaticMeetingsFallback } from "./data/staticMeetingsFallback";
 moment.locale('fr');
 
@@ -249,14 +250,13 @@ const Reunions = () => {
                                 <div className="space-y-4">
                                     <div>
                                         <h3 className="font-semibold text-lg mb-2">📍 Réunions mensuelles</h3>
-                                        <a
+                                        <MapLink
                                             href="https://maps.google.com/?q=45.31448389778514, -0.5384175550138426"
-                                            target="_blank"
-                                            rel="noreferrer"
+                                            label="Salle polyvalente"
                                             className="text-blue-400 hover:text-blue-300 underline block"
                                         >
                                             Salle polyvalente
-                                        </a>
+                                        </MapLink>
                                         <p className="text-gray-300 text-sm">17150 BOISREDON</p>
                                     </div>
                                     
@@ -265,24 +265,20 @@ const Reunions = () => {
                                         <p className="text-sm text-gray-300 mb-2">En cas d'indisponibilité :</p>
                                         <ul className="space-y-1 text-sm">
                                             <li>
-                                                <a
+                                                <MapLink
                                                     href="https://maps.google.com/?q=45.31487164048232, -0.5382009545538097"
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="text-blue-400 hover:text-blue-300 underline"
+                                                    label="Salle des fêtes"
                                                 >
                                                     Salle des fêtes
-                                                </a>
+                                                </MapLink>
                                             </li>
                                             <li>
-                                                <a
+                                                <MapLink
                                                     href="https://maps.google.com/?q=45.31533224209379,-0.5377245379285329"
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="text-blue-400 hover:text-blue-300 underline"
+                                                    label="Salle de la Mairie"
                                                 >
                                                     Salle de la Mairie
-                                                </a>
+                                                </MapLink>
                                             </li>
                                         </ul>
                                     </div>
@@ -291,24 +287,20 @@ const Reunions = () => {
                                         <h3 className="font-semibold text-lg mb-2">🔭 Observations</h3>
                                         <ul className="space-y-1 text-sm">
                                             <li>
-                                                <a
+                                                <MapLink
                                                     href="https://maps.google.com/?q=45.31815775829403, -0.5432543688107226"
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="text-blue-400 hover:text-blue-300 underline"
+                                                    label='Site de "Bois-Sec"'
                                                 >
                                                     Site de "Bois-Sec"
-                                                </a>
+                                                </MapLink>
                                             </li>
                                             <li>
-                                                <a
+                                                <MapLink
                                                     href="https://maps.google.com/?q=45.31747828465985, -0.5331292135372254"
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="text-blue-400 hover:text-blue-300 underline"
+                                                    label="Chemin du stade"
                                                 >
                                                     Chemin du stade
-                                                </a>
+                                                </MapLink>
                                             </li>
                                         </ul>
                                     </div>
