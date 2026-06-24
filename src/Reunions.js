@@ -6,6 +6,7 @@ import 'moment/locale/fr';
 import { Calendar, MapPin, Clock, Info } from "lucide-react";
 import MapLink from "./components/NavigationChooser/MapLink";
 import { getStaticMeetingsFallback } from "./data/staticMeetingsFallback";
+import CalendarChooserModal from "./components/CalendarChooser/CalendarChooserModal";
 moment.locale('fr');
 
 const API_BASE = process.env.REACT_APP_API_URL || "";
@@ -42,6 +43,10 @@ const Reunions = () => {
     const [displayLimit, setDisplayLimit] = useState(2);
     const isInitialized = useRef(false);
 
+    // Calendar Chooser States
+    const [calendarModalOpen, setCalendarModalOpen] = useState(false);
+    const [calendarEvent, setCalendarEvent] = useState(null);
+
     useEffect(() => {
         if (!isInitialized.current && events.length > 0) {
             const currentYear = new Date().getFullYear();
@@ -62,6 +67,66 @@ const Reunions = () => {
     const handleEventClick = (event) => {
         setSelectedEvent(event);
         setOverlayVisible(true);
+    };
+
+    const handleUpcomingClick = (event) => {
+        const ua = navigator.userAgent;
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+        
+        if (isMobile) {
+            const isApple = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const title = encodeURIComponent(event.title || "Réunion Club Astro Vega");
+            const description = encodeURIComponent(event.description || "");
+            
+            const formatUtcDate = (date) => {
+                if (!date) return "";
+                const d = new Date(date);
+                return d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+            };
+            
+            const startStr = formatUtcDate(event.start);
+            const endDate = new Date(event.start);
+            endDate.setHours(23, 59, 59, 999);
+            const endStr = formatUtcDate(endDate);
+
+            if (isApple) {
+                // Fichier ICS pour l'agenda Apple
+                const nowStr = formatUtcDate(new Date());
+                const uniqueId = event.id || Math.random().toString(36).substring(2);
+                
+                const icsContent = [
+                    "BEGIN:VCALENDAR",
+                    "VERSION:2.0",
+                    "PRODID:-//Club Astro Vega//Calendar//FR",
+                    "BEGIN:VEVENT",
+                    `UID:${uniqueId}@clubastrovega.fr`,
+                    `DTSTAMP:${nowStr}`,
+                    `DTSTART:${startStr}`,
+                    `DTEND:${endStr}`,
+                    `SUMMARY:${event.title || "Réunion Club Astro Vega"}`,
+                    `DESCRIPTION:${event.description || ""}`,
+                    "END:VEVENT",
+                    "END:VCALENDAR"
+                ].join("\r\n");
+
+                const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `${(event.title || "reunion").replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } else {
+                // Redirection Google Calendar pour Android
+                const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startStr}/${endStr}&details=${description}`;
+                window.open(url, "_blank", "noopener,noreferrer");
+            }
+        } else {
+            setCalendarEvent(event);
+            setCalendarModalOpen(true);
+        }
     };
 
     const closeOverlay = () => {
@@ -138,7 +203,7 @@ const Reunions = () => {
                                                                 key={`upcoming-${index}`}
                                                                 className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-4 transition-all duration-300 hover:bg-opacity-20 hover:scale-[1.02] cursor-pointer animate-float-in"
                                                                 style={{ animationDelay: `${index * 50}ms` }}
-                                                                onClick={() => event.description && handleEventClick(event)}
+                                                                onClick={() => handleUpcomingClick(event)}
                                                                 onMouseEnter={() => setHoveredEvent(`upcoming-${index}`)}
                                                                 onMouseLeave={() => setHoveredEvent(null)}
                                                             >
@@ -375,6 +440,15 @@ const Reunions = () => {
             )}
 
             <Footer />
+
+            <CalendarChooserModal
+                isOpen={calendarModalOpen}
+                onClose={() => {
+                    setCalendarModalOpen(false);
+                    setCalendarEvent(null);
+                }}
+                event={calendarEvent}
+            />
         </div>
     );
 };
