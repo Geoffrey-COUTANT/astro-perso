@@ -1,6 +1,8 @@
 using Api.Data;
 using Api.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Api.Services;
 
@@ -9,10 +11,12 @@ public record MeetingItemDto(string Id, string Title, string Description, DateTi
 public class MeetingsService
 {
     private readonly IDbContextFactory<AppDbContext> _dbFactory;
+    private readonly ILogger<MeetingsService> _logger;
 
-    public MeetingsService(IDbContextFactory<AppDbContext> dbFactory)
+    public MeetingsService(IDbContextFactory<AppDbContext> dbFactory, ILogger<MeetingsService> logger)
     {
         _dbFactory = dbFactory;
+        _logger = logger;
     }
 
     public List<MeetingItemDto> GetAll()
@@ -74,6 +78,18 @@ public class MeetingsService
         using var db = _dbFactory.CreateDbContext();
         var meeting = db.Meetings.Find(id);
         if (meeting == null) return false;
+
+        var meetingData = JsonSerializer.Serialize(new
+        {
+            meeting.Id,
+            meeting.Title,
+            meeting.Description,
+            meeting.StartDate,
+            meeting.EndDate,
+            meeting.CreatedAt
+        });
+        _logger.LogInformation("AUDIT_DELETE: Meeting with ID {MeetingId} deleted. Archived content: {MeetingData}", id, meetingData);
+
         db.Meetings.Remove(meeting);
         db.SaveChanges();
         return true;
