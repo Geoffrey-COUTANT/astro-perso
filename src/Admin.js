@@ -9,6 +9,7 @@ const API_BASE = process.env.REACT_APP_API_URL || "";
 const ADMIN_SECTIONS = [
     { id: "reunions", label: "Réunions", icon: Calendar, path: "/reunions" },
     { id: "galerie", label: "Galerie", icon: Images, path: "/galerie" },
+    { id: "blog", label: "Blog", icon: Sparkles, path: "/blog" },
     { id: "liens-utiles", label: "Liens utiles", icon: Link2, path: "/liens-utiles" },
     { id: "contact", label: "Contact", icon: Mail, path: "/contact" },
 ];
@@ -61,6 +62,30 @@ function Admin() {
     const [contactLoading, setContactLoading] = useState(false);
     const [contactForm, setContactForm] = useState({ email: "", phone: "", addressLine1: "", addressLine2: "" });
     const [contactSaving, setContactSaving] = useState(false);
+
+    const [blogPosts, setBlogPosts] = useState([]);
+    const [blogLoading, setBlogLoading] = useState(false);
+    const [blogContent, setBlogContent] = useState("");
+    const [blogFiles, setBlogFiles] = useState([]);
+    const [blogSaving, setBlogSaving] = useState(false);
+
+    const isVideoFile = (file) => {
+        if (!file) return false;
+        const type = file.type || "";
+        if (type.toLowerCase().startsWith("video/")) return true;
+        const fileName = file.name || "";
+        const ext = fileName.toLowerCase().split('.').pop();
+        return ["mp4", "webm", "ogg", "mov"].includes(ext);
+    };
+
+    const isVideoAttachment = (att) => {
+        if (!att) return false;
+        const contentType = att.contentType || "";
+        if (contentType.toLowerCase().startsWith("video/")) return true;
+        const fileName = att.fileName || "";
+        const ext = fileName.toLowerCase().split('.').pop();
+        return ["mp4", "webm", "ogg", "mov"].includes(ext);
+    };
 
     const headers = {
         ...(token ? { "X-Admin-Key": token } : {}),
@@ -217,6 +242,86 @@ function Admin() {
             })
             .catch((err) => setError(err.message))
             .finally(() => setContactSaving(false));
+    };
+
+    const fetchBlogPosts = () => {
+        if (!API_BASE) return;
+        setBlogLoading(true);
+        fetch(`${API_BASE}/api/blog`)
+            .then((r) => (r.ok ? r.json() : []))
+            .then((data) => setBlogPosts(Array.isArray(data) ? data : []))
+            .catch(() => setBlogPosts([]))
+            .finally(() => setBlogLoading(false));
+    };
+
+    useEffect(() => {
+        if (activeSection === "blog") fetchBlogPosts();
+    }, [activeSection]);
+
+    const handleSaveBlogPost = (e) => {
+        e.preventDefault();
+        if (!blogContent.trim() && blogFiles.length === 0) {
+            setError("Le post doit contenir du texte ou au moins un fichier.");
+            return;
+        }
+
+        const videoCount = blogFiles.filter(isVideoFile).length;
+        if (videoCount > 1) {
+            setError("Une seule vidéo est autorisée par post.");
+            return;
+        }
+
+        if (blogFiles.length > 5) {
+            setError("Vous ne pouvez pas ajouter plus de 5 fichiers en tout pour un post.");
+            return;
+        }
+        setBlogSaving(true);
+        setError("");
+        setMessage("");
+
+        const formData = new FormData();
+        formData.append("content", blogContent.trim());
+        blogFiles.forEach((file) => {
+            formData.append("files", file);
+        });
+
+        fetch(`${API_BASE}/api/blog`, {
+            method: "POST",
+            headers,
+            body: formData,
+        })
+            .then((r) => {
+                if (r.status === 401) throw new Error("Clé admin invalide.");
+                if (!r.ok) throw new Error("Erreur lors de la création du post.");
+                return r.json();
+            })
+            .then(() => {
+                setMessage("Post de blog publié avec succès.");
+                setBlogContent("");
+                setBlogFiles([]);
+                const fileInput = document.getElementById("blog-file-input");
+                if (fileInput) fileInput.value = "";
+                fetchBlogPosts();
+            })
+            .catch((err) => setError(err.message))
+            .finally(() => setBlogSaving(false));
+    };
+
+    const handleDeleteBlogPost = (id) => {
+        if (!window.confirm("Supprimer ce post de blog ainsi que ses photos/vidéos ?")) return;
+        setError("");
+        setMessage("");
+        fetch(`${API_BASE}/api/blog/${id}`, {
+            method: "DELETE",
+            headers,
+        })
+            .then((r) => {
+                if (r.status === 401) throw new Error("Clé admin invalide.");
+                if (!r.ok) throw new Error("Erreur suppression.");
+                setMessage("Post de blog supprimé.");
+                fetchBlogPosts();
+            })
+            .catch((err) => setError(err.message));
     };
 
     const unifiedMeetings = useMemo(() => {
@@ -1301,7 +1406,190 @@ function Admin() {
                     </div>
                 )}
 
-                {activeSection !== "galerie" && activeSection !== "reunions" && activeSection !== "liens-utiles" && activeSection !== "contact" && (() => {
+                {activeSection === "blog" && (
+                    <div className="space-y-8 animate-float-in">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-2 rounded-xl bg-indigo-500/20 border border-indigo-400/30">
+                                <Sparkles className="w-7 h-7 text-indigo-300" />
+                            </div>
+                            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                                Administration Blog
+                            </h1>
+                        </div>
+
+                        {error && (
+                            <div className="p-4 rounded-2xl bg-red-500/10 border border-red-400/30">
+                                <p className="text-red-200 text-sm">{error}</p>
+                            </div>
+                        )}
+                        {message && (
+                            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-400/30">
+                                <p className="text-emerald-200 text-sm">{message}</p>
+                            </div>
+                        )}
+
+                        {/* Compose form */}
+                        <section className="p-6 sm:p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl">
+                            <h2 className="text-xl font-bold mb-5 flex items-center gap-2 text-white">
+                                <span className="p-1.5 rounded-lg bg-indigo-500/30">
+                                    <Plus size={20} className="text-indigo-200" />
+                                </span>
+                                Publier un nouveau post
+                            </h2>
+                            <form onSubmit={handleSaveBlogPost} className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-2">Message (texte, émoticônes...)</label>
+                                    <textarea
+                                        value={blogContent}
+                                        onChange={(e) => setBlogContent(e.target.value)}
+                                        placeholder="Quoi de neuf aujourd'hui ?"
+                                        rows={4}
+                                        className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400/50 transition font-sans resize-y"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                                        Photos ou Vidéos (jpg, png, webp, gif, mp4, mov... - Max 10 Mo par fichier)
+                                    </label>
+                                    <input
+                                        id="blog-file-input"
+                                        type="file"
+                                        multiple
+                                        accept="image/*,video/*"
+                                        onChange={(e) => {
+                                             const selectedFiles = Array.from(e.target.files || []);
+                                             const currentVideos = blogFiles.filter(isVideoFile);
+                                             const newVideos = selectedFiles.filter(isVideoFile);
+
+                                             if (currentVideos.length + newVideos.length > 1) {
+                                                 setError("Une seule vidéo est autorisée par post.");
+                                                 e.target.value = "";
+                                                 return;
+                                             }
+
+                                             if (blogFiles.length + selectedFiles.length > 5) {
+                                                 setError("Maximum 5 fichiers en tout pour un post (ex. 1 vidéo et 4 images).");
+                                                 e.target.value = "";
+                                                 return;
+                                             }
+
+                                             setError("");
+                                             setBlogFiles(prev => [...prev, ...selectedFiles]);
+                                         }}
+                                        className="block w-full text-sm text-gray-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-gradient-to-r file:from-indigo-600 file:to-purple-600 file:text-white file:font-medium file:cursor-pointer hover:file:opacity-90 transition"
+                                    />
+                                </div>
+
+                                {/* Selected files preview */}
+                                {blogFiles.length > 0 && (
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
+                                        {blogFiles.map((file, idx) => {
+                                            const isVideo = isVideoFile(file);
+                                            const url = URL.createObjectURL(file);
+                                            return (
+                                                <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-white/10 group bg-slate-950">
+                                                    {isVideo ? (
+                                                        <video src={url} className="w-full h-full object-cover" muted playsInline />
+                                                    ) : (
+                                                        <img src={url} alt="Preview" className="w-full h-full object-cover" />
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setBlogFiles(prev => prev.filter((_, i) => i !== idx));
+                                                        }}
+                                                        className="absolute top-1.5 right-1.5 p-1 rounded-full bg-red-600/80 hover:bg-red-600 text-white transition opacity-90 hover:scale-105"
+                                                        title="Supprimer ce fichier"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                <div className="flex justify-end">
+                                    <button
+                                        type="submit"
+                                        disabled={blogSaving || (!blogContent.trim() && blogFiles.length === 0)}
+                                        className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-medium shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30"
+                                    >
+                                        <Plus size={20} />
+                                        {blogSaving ? "Publication en cours…" : "Publier"}
+                                    </button>
+                                </div>
+                            </form>
+                        </section>
+
+                        {/* Existing posts */}
+                        <section className="space-y-4">
+                            <h2 className="text-xl font-bold flex items-center gap-2 text-white">
+                                <span className="p-1.5 rounded-lg bg-white/10">📝</span>
+                                Liste des posts publiés
+                            </h2>
+
+                            {blogLoading ? (
+                                <div className="flex justify-center py-12">
+                                    <div className="w-8 h-8 border-2 border-indigo-400/50 border-t-indigo-300 rounded-full animate-spin" />
+                                </div>
+                            ) : blogPosts.length === 0 ? (
+                                <div className="py-12 px-6 rounded-2xl bg-white/5 border border-white/10 border-dashed text-center">
+                                    <p className="text-gray-400">Aucun post publié pour le moment.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {blogPosts.map((post) => (
+                                        <div key={post.id} className="p-6 rounded-2xl bg-white/5 border border-white/10 flex flex-col md:flex-row justify-between gap-6">
+                                            <div className="flex-1 space-y-4 min-w-0">
+                                                <div className="flex items-center gap-2 text-xs text-indigo-300 font-sans">
+                                                    <span>Posté le {new Date(post.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                                                </div>
+                                                <p className="text-white text-sm sm:text-base whitespace-pre-wrap font-sans break-words">{post.content}</p>
+
+                                                {post.attachments && post.attachments.length > 0 && (
+                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                        {post.attachments.map((att) => {
+                                                            const isVideo = isVideoAttachment(att);
+                                                            const attUrl = `${API_BASE}${att.url}`;
+                                                            return (
+                                                                <div key={att.id} className="aspect-square rounded-lg overflow-hidden border border-white/10 bg-slate-900">
+                                                                    {isVideo ? (
+                                                                        <video src={attUrl} className="w-full h-full object-cover" muted playsInline />
+                                                                    ) : (
+                                                                        <img src={attUrl} alt={att.fileName} className="w-full h-full object-cover" />
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="shrink-0 flex items-start">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteBlogPost(post.id)}
+                                                    className="p-3 rounded-xl bg-red-500/20 hover:bg-red-500/40 text-red-300 hover:text-white transition flex items-center justify-center gap-2 border border-red-500/30 text-sm font-medium w-full md:w-auto"
+                                                    title="Supprimer ce post"
+                                                >
+                                                    <Trash2 size={18} />
+                                                    <span>Supprimer</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+                        <Link to="/blog" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-cyan-300/90 hover:text-cyan-200 transition text-sm">
+                            Voir la page Blog →
+                        </Link>
+                    </div>
+                )}
+
+                {activeSection !== "galerie" && activeSection !== "reunions" && activeSection !== "blog" && activeSection !== "liens-utiles" && activeSection !== "contact" && (() => {
                     const section = ADMIN_SECTIONS.find((s) => s.id === activeSection);
                     if (!section) return null;
                     const Icon = section.icon;

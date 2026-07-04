@@ -9,6 +9,7 @@ import LiensUtiles from './LiensUtiles';
 import Galerie from './Galerie';
 import Admin from './Admin';
 import AdminLogin, { ADMIN_TOKEN_KEY } from './AdminLogin';
+import Blog from './Blog';
 
 if (typeof window !== 'undefined') {
   window.history.scrollRestoration = 'manual';
@@ -56,6 +57,7 @@ function App() {
               <Route path={'/a-propos'} element={<APropos />} />
               <Route path={'/liens-utiles'} element={<LiensUtiles />} />
               <Route path={'/galerie'} element={<Galerie />} />
+              <Route path={'/blog'} element={<Blog />} />
               <Route path={'/admin/connect'} element={<AdminLogin />} />
               <Route path={'/admin'} element={<AdminGuard><Admin /></AdminGuard>} />
               <Route path="*" element={<NotFound404 />} />

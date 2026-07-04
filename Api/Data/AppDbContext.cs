@@ -15,6 +15,8 @@ public class AppDbContext : DbContext
     public DbSet<ContactInfoEntity> ContactInfo => Set<ContactInfoEntity>();
     public DbSet<LinkCategoryEntity> LinkCategories => Set<LinkCategoryEntity>();
     public DbSet<LinkItemEntity> LinkItems => Set<LinkItemEntity>();
+    public DbSet<BlogPostEntity> BlogPosts => Set<BlogPostEntity>();
+    public DbSet<BlogPostAttachmentEntity> BlogPostAttachments => Set<BlogPostAttachmentEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -94,6 +96,25 @@ public class AppDbContext : DbContext
             e.Property(x => x.Name).HasMaxLength(256);
             e.Property(x => x.Url).HasMaxLength(2000);
             e.Property(x => x.Description).HasMaxLength(1000);
+        });
+
+        modelBuilder.Entity<BlogPostEntity>(e =>
+        {
+            e.ToTable("blog_posts");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Content).HasColumnType("text");
+            e.HasMany(x => x.Attachments)
+             .WithOne()
+             .HasForeignKey(x => x.BlogPostId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BlogPostAttachmentEntity>(e =>
+        {
+            e.ToTable("blog_post_attachments");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.FileName).HasMaxLength(256);
+            e.Property(x => x.ContentType).HasMaxLength(128);
         });
     }
 }

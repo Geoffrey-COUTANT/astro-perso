@@ -22,7 +22,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: astro
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

@@ -9,7 +9,7 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 var loginAttempts = new ConcurrentDictionary<string, List<DateTime>>();
-const int LoginMaxAttempts = 5;
+const int LoginMaxAttempts = 100;
 const int LoginWindowMinutes = 15;
 
 var rawConnectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
@@ -77,7 +77,13 @@ builder.Services.AddCors(options =>
 builder.Services.AddSingleton<GalleryService>();
 builder.Services.AddSingleton<MeetingsService>();
 builder.Services.AddSingleton<LinksService>();
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 500 * 1024 * 1024; // 500 Mo
+});
+
 builder.Services.AddSingleton<ContactService>();
+builder.Services.AddSingleton<BlogService>();
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -90,8 +96,8 @@ var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrEmpty(port))
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
-// Limite taille body (ex. upload galerie 10 Mo) — évite grosses allocations RAM
-builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 10 * 1024 * 1024);
+// Limite taille body (ex. upload galerie/blog) — évite grosses allocations RAM
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 500 * 1024 * 1024); // 500 Mo
 
 var app = builder.Build();
 
@@ -164,7 +170,7 @@ app.UseStaticFiles(new StaticFileOptions
 bool IsAdmin(HttpRequest request)
 {
     var key = builder.Configuration["Admin:ApiKey"];
-    if (string.IsNullOrEmpty(key)) return true;
+    if (string.IsNullOrEmpty(key)) return false;
     return request.Headers.TryGetValue("X-Admin-Key", out var headerKey) && headerKey == key;
 }
 
@@ -493,6 +499,48 @@ app.MapPost("/api/admin/login", (AdminLoginRequest? body, HttpContext ctx, IConf
     if (string.IsNullOrEmpty(apiKey))
         return Results.Json(new { error = "ApiKey non configurée (configurer Admin:ApiKey)." }, statusCode: 500);
     return Results.Ok(new { token = apiKey });
+});
+
+app.MapGet("/api/blog", (BlogService blog) =>
+{
+    var posts = blog.GetAll();
+    return Results.Ok(posts);
+});
+
+app.MapGet("/api/blog/latest", (BlogService blog) =>
+{
+    var latest = blog.GetLatest();
+    if (latest == null) return Results.NotFound();
+    return Results.Ok(latest);
+});
+
+app.MapGet("/api/blog/attachment/{id:guid}/file", (Guid id, BlogService blog) =>
+{
+    var file = blog.GetAttachmentContent(id);
+    if (file == null) return Results.NotFound();
+    return Results.File(file.Value.Content, file.Value.ContentType, enableRangeProcessing: true);
+});
+
+app.MapPost("/api/blog", async (HttpRequest request, BlogService blog, CancellationToken ct) =>
+{
+    if (!IsAdmin(request)) return Results.Unauthorized();
+    if (!request.HasFormContentType) return Results.BadRequest("Multipart form data requise.");
+
+    var form = await request.ReadFormAsync(ct);
+    var content = form["content"].FirstOrDefault() ?? "";
+    var files = form.Files.ToList();
+
+    var added = await blog.AddAsync(content, files, ct);
+    if (added == null) return Results.BadRequest("Le post doit contenir du texte ou au moins un fichier valide.");
+
+    return Results.Created($"/api/blog/{added.Id}", added);
+});
+
+app.MapDelete("/api/blog/{id:guid}", (Guid id, HttpRequest request, BlogService blog) =>
+{
+    if (!IsAdmin(request)) return Results.Unauthorized();
+    if (!blog.Delete(id)) return Results.NotFound();
+    return Results.NoContent();
 });
 
 app.Run();
